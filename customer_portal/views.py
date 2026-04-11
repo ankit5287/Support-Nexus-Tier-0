@@ -86,7 +86,8 @@ def index(request):
                 AITrainingLog.objects.create(
                     ticket_text=user_input,
                     predicted_label=predicted_label_str,
-                    predicted_id=prediction_id
+                    predicted_id=prediction_id,
+                    confidence=round(confidence * 100, 2)
                 )
                 
             else:
@@ -107,7 +108,8 @@ def index(request):
                 AITrainingLog.objects.create(
                     ticket_text=user_input,
                     predicted_label=simulated_label,
-                    predicted_id=simulated_id
+                    predicted_id=simulated_id,
+                    confidence=85.0
                 )
         else:
             context['error'] = "Please enter some text."

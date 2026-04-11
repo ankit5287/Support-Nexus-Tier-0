@@ -5,10 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DevSupport Nexus - Developer Dashboard</title>
     <style>
+        :root {
+            --bg: #0d1117;
+            --card-bg: #161b22;
+            --border: #30363d;
+            --accent: #58a6ff;
+            --success: #238636;
+            --tag-bg: #a371f7;
+            --text: #c9d1d9;
+            --text-heading: #f0f6fc;
+            --text-muted: #8b949e;
+        }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #0d1117;
-            color: #c9d1d9;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
             padding: 40px;
         }
@@ -16,91 +27,161 @@
             max-width: 900px;
             margin: 0 auto;
         }
-        h1 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        h2 { color: #f0f6fc; margin-top: 30px; }
+        h1 { color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 30px; }
+        h2 { color: var(--text-heading); margin-top: 0; margin-bottom: 15px; font-size: 1.4em; }
         .card {
-            background-color: #161b22;
-            border: 1px solid #30363d;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 20px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: transform 0.2s, border-color 0.2s;
         }
+        .card:hover { border-color: #444c56; }
+        
         .ticket {
             display: flex;
             justify-content: space-between;
-            padding: 10px;
-            border-bottom: 1px solid #30363d;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
         }
         .ticket:last-child { border-bottom: none; }
         .tag {
-            background-color: #a371f7;
+            background-color: var(--tag-bg);
             color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
         }
-        textarea {
-            width: 100%;
-            height: 200px;
-            background-color: #0d1117;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
+        
+        .auth-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+        .auth-status a { color: var(--accent); text-decoration: none; }
+        .auth-status a:hover { text-decoration: underline; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .tab-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 8px 16px;
             border-radius: 6px;
-            padding: 15px;
-            font-family: monospace;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        form { display: none; }
+        form.active { display: block; }
+
+        input[type="text"], textarea {
+            width: 100%;
+            background-color: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: inherit;
             font-size: 14px;
             box-sizing: border-box;
             margin-bottom: 15px;
+            outline: none;
         }
-        button {
-            background-color: #238636;
+        input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+        textarea { height: 180px; font-family: monospace; }
+        
+        button.submit-btn {
+            background-color: var(--success);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 6px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
         }
-        button:hover { background-color: #2ea043; }
+        button.submit-btn:hover { opacity: 0.9; }
+
         .llm-review {
-            background-color: #1f2428;
-            border-left: 4px solid #58a6ff;
-            padding: 15px;
-            margin-top: 20px;
-            border-radius: 4px;
+            background-color: #1c2128;
+            border-left: 4px solid var(--accent);
+            padding: 20px;
+            margin-top: 24px;
+            border-radius: 0 4px 4px 0;
         }
+        .github-summary {
+            background: linear-gradient(90deg, #1f242b 0%, #161b22 100%);
+            border: 1px solid var(--border);
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .gh-icon { font-size: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="auth-status">
+            <span>Welcome, <strong>{{ user.username }}</strong></span>
+            <a href="{% url 'dev_logout' %}">Log Out</a>
+        </div>
+        
         <h1>💻 Developer Workspace</h1>
         
-        <!-- Analytics Dashboard Section -->
-        <div style="display:flex; gap: 20px; align-items: stretch; margin-bottom: 20px;">
-            <!-- KPI Cards -->
-            <div style="flex:1; display:flex; flex-direction:column; gap:20px;">
-                <div class="card" style="text-align: center; border-left: 4px solid #3fb950; flex:1; display:flex; flex-direction:column; justify-content:center;">
-                    <h3 style="margin-bottom: 5px;">Total Tickets Processed</h3>
-                    <h1 style="font-size: 3em; margin: 0; color: #58a6ff;">{{ total_tickets }}</h1>
-                </div>
-                <div class="card" style="text-align: center; border-left: 4px solid #e34c26; flex:1; display:flex; flex-direction:column; justify-content:center;">
-                    <h3 style="margin-bottom: 5px;">AI Confidence Accuracy</h3>
-                    <h1 style="font-size: 3em; margin: 0; color: #a371f7;">92.4%</h1>
-                </div>
+        <div style="display:flex; gap: 24px; align-items: stretch; margin-bottom: 24px;">
+            <div class="card" style="text-align: center; border-left: 4px solid #3fb950; flex:1; display:flex; flex-direction:column; justify-content:center;">
+                <h3 style="margin-bottom: 8px; font-size: 0.9em; color: var(--text-muted);">Total Tickets Processed</h3>
+                <h1 style="font-size: 3.2em; margin: 0; color: var(--accent); border-bottom:none;">{{ total_tickets }}</h1>
             </div>
 
-            <!-- Pie Chart -->
-            <div class="card" style="flex: 2; position: relative;">
-                <h2 style="text-align: center;">Ticket Intent Distribution</h2>
-                <div style="width: 100%; max-width: 400px; margin: 0 auto;">
+            <div class="card" style="flex: 2;">
+                <h2 style="text-align: center; font-size: 1.1em; margin-bottom: 20px;">Ticket Intent Distribution</h2>
+                <div style="width: 100%; max-width: 380px; margin: 0 auto; position: relative;">
                     <canvas id="intentChart"></canvas>
+                    <div id="chartCenter" style="position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
+                        <span style="font-size: 0.8em; color: var(--text-muted); display: block; text-transform: uppercase; letter-spacing: 1px; margin-bottom: -5px;">Total</span>
+                        <span style="font-size: 2.2em; font-weight: 900; color: var(--accent);">{{ total_tickets }}</span>
+                    </div>
+                </div>
+                
+                <!-- Dynamic Bottom Stat Strip -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--border);">
+                    {% for item in distribution_list %}
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="width: 10px; height: 10px; border-radius: 50%; background: {{ item.color }};"></span>
+                        <span style="font-size: 0.85em;">{{ item.label }}: <strong>{{ item.count }}</strong></span>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h2>Active High-Priority Bugs</h2>
+            <h2>🐛 Active High-Priority Bugs</h2>
             {% for ticket in bug_tickets %}
             <div class="ticket">
                 <span><strong>Bug #{{ ticket.id }}:</strong> {{ ticket.title }}</span>
@@ -109,83 +190,103 @@
             {% endfor %}
         </div>
 
-        <!-- Render Chart.js Script -->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script>
-            const ctx = document.getElementById('intentChart').getContext('2d');
+        <div class="card" style="border-top: 4px solid var(--accent);">
+            <h2>🤖 AI Code Reviewer (GitHub Integration)</h2>
+            <p style="color:var(--text-muted); font-size: 0.9em; margin-bottom: 20px;">Automate your PR reviews. Analyze code logic, security, and styling using enterprise AI models.</p>
             
-            // Read JSON variables passed from Django
-            const labels = {{ chart_labels|safe }};
-            const dataCounts = {{ chart_data|safe }};
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('github')">GitHub Pull Request</button>
+                <button class="tab-btn" onclick="showTab('manual')">Manual Snippet</button>
+            </div>
 
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: dataCounts,
-                        backgroundColor: [
-                            'rgba(218, 54, 51, 0.7)',  // Red - Bug
-                            'rgba(88, 166, 255, 0.7)', // Blue - Billing
-                            'rgba(63, 185, 80, 0.7)',  // Green - Praise
-                            'rgba(163, 113, 247, 0.7)' // Purple - Questions
-                        ],
-                        borderColor: '#0d1117',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#c9d1d9' } }
-                    }
-                }
-            });
-        </script>
+            <form id="github-form" class="active" method="POST">
+                {% csrf_token %}
+                <input type="text" name="github_pr_url" placeholder="https://github.com/owner/repository/pull/123" required>
+                <button type="submit" class="submit-btn">Review GitHub Pull Request →</button>
+            </form>
 
-        <div class="card" style="border-left: 4px solid #a371f7;">
-            <h2>📈 Continuous Learning Validation Queue</h2>
-            <p style="color:#8b949e">These are recent tickets submitted by users. Verify that the AI predicted the correct category. Verified tickets will be consumed by the nightly pipeline to natively fine-tune the BERT model.</p>
-            {% for log in ai_logs %}
-            <div class="ticket" style="display:flex; flex-direction:column; gap:5px;">
-                <span style="font-size: 0.9em; color: #8b949e;">User typed: "{{ log.ticket_text }}"</span>
+            <form id="manual-form" method="POST">
+                {% csrf_token %}
+                <textarea name="code_snippet" placeholder="Paste your code snippet here (Python, JS, etc.)" required>{% if submitted_code %}{{ submitted_code }}{% endif %}</textarea>
+                <button type="submit" class="submit-btn">Run Automated AI Review →</button>
+            </form>
+
+            {% if github_pr_info %}
+            <div class="github-summary" style="margin-top: 20px;">
+                <span class="gh-icon">📦</span>
                 <div>
-                    <strong>AI Predicted:</strong> <span style="color:#58a6ff;">{{ log.predicted_label }}</span>
-                    <button style="float:right; padding: 4px 8px; font-size:12px; background-color:#238636;">Verify Correct</button>
-                    <button style="float:right; padding: 4px 8px; font-size:12px; background-color:#da3633; margin-right:5px;">Correct Label</button>
+                    <div style="font-size: 0.8em; color: var(--text-muted);">Fetching from GitHub</div>
+                    <strong>{{ github_pr_info.title }}</strong> 
+                    <span style="color: var(--text-muted); font-size: 0.9em;">by @{{ github_pr_info.author }}</span>
                 </div>
             </div>
-            {% empty %}
-            <p style="color:#8b949e; font-style:italic;">No new predictions to verify.</p>
-            {% endfor %}
-        </div>
-
-        <div class="card">
-            <h2>🤖 LLM Code Reviewer (Pull Request Check)</h2>
-            <p style="color:#8b949e">Paste your Python/JS code below. Our AI Code Assistant will review it automatically for bugs, logic, and style before it merges.</p>
-            
-            <form method="POST">
-                {% csrf_token %}
-                <textarea name="code_snippet" placeholder="def fix_bug():&#10;    # Your code here" required>{% if submitted_code %}{{ submitted_code }}{% endif %}</textarea>
-                <button type="submit">Run Automated AI Review</button>
-            </form>
+            {% endif %}
 
             {% if success_msg %}
                 <div class="llm-review">
-                    <h3 style="color:#3fb950; margin-top:0;">✅ {{ success_msg }}</h3>
-                    <ul style="margin:0; padding-left:20px;">
+                    <h3 style="color:#3fb950; margin-top:0; font-size: 1.1em;">✅ {{ success_msg }}</h3>
+                    <ul style="margin:0; padding-left:20px; font-size: 14px;">
                         {% for feedback in llm_feedback %}
-                            <li style="margin-bottom: 8px;">{{ feedback }}</li>
+                            <li style="margin-bottom: 10px; line-height: 1.5;">{{ feedback }}</li>
                         {% endfor %}
                     </ul>
+                    {% if submitted_code and not github_pr_info %}
+                    <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                        <span style="font-size: 0.8em; color: var(--text-muted);">Analyzed Content Snippet:</span>
+                        <pre style="font-size: 11px; background: #0d1117; padding:10px; border-radius:4px; overflow:auto; max-height:100px;">{{ submitted_code }}</pre>
+                    </div>
+                    {% endif %}
                 </div>
             {% endif %}
             
             {% if error %}
-                <p style="color: #f85149;">{{ error }}</p>
+                <p style="color: #f85149; background: rgba(248, 81, 73, 0.1); padding: 10px; border-radius: 6px; font-size: 0.9em; margin-top: 20px;">⚠️ {{ error }}</p>
             {% endif %}
         </div>
-        <p style="text-align:center; color:#8b949e;"><a href="/" style="color:#58a6ff;">&larr; Back to Customer Support Portal</a></p>
+
+        <p style="text-align:center; color:var(--text-muted); font-size: 0.9em;"><a href="/" style="color:var(--accent);">&larr; Back to Customer Support Portal</a></p>
     </div>
+
+    <!-- Render Chart.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('intentChart').getContext('2d');
+        const labels = {{ chart_labels|safe }};
+        const dataCounts = {{ chart_data|safe }};
+        const bgColors = {{ chart_colors|safe }};
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataCounts,
+                    backgroundColor: bgColors,
+                    borderColor: '#0d1117',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: { display: false } // Hide default legend as we have a custom one now
+                }
+            }
+        });
+
+        function showTab(type) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('form').forEach(f => f.classList.remove('active'));
+            
+            if (type === 'github') {
+                document.getElementById('github-form').classList.add('active');
+                event.target.classList.add('active');
+            } else {
+                document.getElementById('manual-form').classList.add('active');
+                event.target.classList.add('active');
+            }
+        }
+    </script>
 </body>
 </html>
