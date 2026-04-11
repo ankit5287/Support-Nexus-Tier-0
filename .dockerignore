@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+my_fine_tuned_bert/
+my_fine_tuned_moderator/
+results_moderation/
+results_intent/
+results_continuous/
+*.safetensors
+*.bin

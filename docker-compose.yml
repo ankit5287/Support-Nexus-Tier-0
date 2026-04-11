@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: nexus-ai-server
+    ports:
+      - "8000:8000"
+    volumes:
+      # We mount the DB and Models as volumes so they persist and are easily updated!
+      - ./db.sqlite3:/app/db.sqlite3
+      # Note: We mount the models from the host machine so the container stays lightweight and doesn't need to rebuild if weights change.
+      # - ./my_fine_tuned_bert:/app/my_fine_tuned_bert
+    environment:
+      - DEBUG=True
+      - DJANGO_SETTINGS_MODULE=devsupport_nexus.settings
