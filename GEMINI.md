@@ -8,10 +8,10 @@ The project is an enterprise-grade AI support platform building on a Django back
 ### Recent Achievements: **Developer Dashboard Refinement**
 In the last session, we simplified the Developer Dashboard to focus on high-priority bug tracking and automated LLM code review.
 
-- **Automated Ticket Analytics:** Real-time distribution charts showing how the AI classifies incoming support requests.
-- **Bug Tracking Workspace:** A dedicated view for engineers to track active high-priority issues.
-- **LLM Code Reviewer:** A functional simulation of a Google Gemini-powered code reviewer that analyzes pull request snippets for security and performance vulnerabilities.
-- **Microservices API:** A robust REST implementation that allows external systems to tap into the classification pipeline.
+- **Automated Ticket Analytics:** Real-time distribution charts with deep-dive category breakdowns and central metrics.
+- **Bug Tracking Workspace:** A dedicated view for engineers to track and prioritize active high-priority issues.
+- **AI Code Reviewer (GitHub Live):** Fully integrated with GitHub API to analyze Pull Request diffs for security, style, and performance.
+- **Microservices API:** A robust REST implementation allowing external systems to tap into the classification pipeline.
 
 ---
 
