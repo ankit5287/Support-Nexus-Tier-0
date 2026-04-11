@@ -16,9 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from customer_portal.views import classify_ticket_api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('customer_portal.urls')),
     path('dev/', include('developer_dashboard.urls')),
+    
+    # Microservices API Route
+    path('api/v1/classify-ticket', classify_ticket_api, name='classify_ticket_api'),
 ]
