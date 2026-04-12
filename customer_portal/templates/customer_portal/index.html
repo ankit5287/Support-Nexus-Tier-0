@@ -20,6 +20,7 @@
                 <div class="nx-nav-links">
                     <a href="/">Home</a>
                     {% if user.is_authenticated %}
+                    <a href="/dev/">Analysis Suite</a>
                     <span style="color:var(--text-2);font-size:0.85rem;padding:7px 14px;">Hi, {{ user.username }}</span>
                     <a href="/dev/logout/" class="nx-nav-cta">Sign Out</a>
                     {% endif %}

@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Code Editor — Support Nexus</title>
+    <title>Operational Logic Studio — Nexus</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <style>
         .ide-layout {
@@ -56,16 +56,15 @@
 </head>
 
 <body>
-    <div class="mesh-bg"></div>
     <div class="page-wrapper">
 
         <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/dev/" class="nx-logo">Support Nexus<span class="nx-logo-dot"></span></a>
+                <a href="/dev/" class="nx-logo">Nexus<span class="nx-logo-dot"></span></a>
                 <div class="nx-nav-links">
                     <a href="/dev/">Dashboard</a>
-                    <a href="/dev/logic-lab/">Logic Lab</a>
+                    <a href="/dev/logic-lab/">Analysis Suite</a>
                     <span style="color:var(--text-3);font-size:0.82rem;padding:0 8px;">{{ user.username }}</span>
                     <a href="/dev/logout/" class="nx-nav-cta">Sign Out</a>
                 </div>
@@ -77,7 +76,7 @@
             <!-- HEADER -->
             <div style="margin-bottom:28px;" class="anim-fade-up">
                 <p class="sub-heading">Developer Tools</p>
-                <h1 class="heading-md">AI Code Editor</h1>
+                <h1 class="heading-md">Operational Logic Studio</h1>
             </div>
 
             <div class="ide-layout anim-fade-up delay-1">
@@ -104,7 +103,7 @@
                                         viewBox="0 0 24 24">
                                         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                                     </svg>
-                                    AI Polish
+                                    Optimize Logic
                                 </button>
                                 <button type="button" class="btn btn-ghost btn-sm" onclick="submitAction('run')">
                                     <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -158,7 +157,7 @@
                     {% if refined_code %}
                     <div class="nx-card" style="padding:20px;">
                         <div class="nx-card-header" style="margin-bottom:14px;">
-                            <div class="nx-card-title">AI Refined Code</div>
+                            <div class="nx-card-title">Refined Logic</div></div>
                             <span class="badge badge-teal">Optimized</span>
                         </div>
                         <pre class="code-block" style="margin:0;">{{ refined_code }}</pre>
@@ -170,7 +169,7 @@
 
                     {% if llm_feedback %}
                     <div class="nx-card" style="padding:20px;">
-                        <p class="sub-heading" style="margin-bottom:12px;">AI Feedback</p>
+                        <p class="sub-heading" style="margin-bottom:12px;">System Feedback</p></p>
                         {% for line in llm_feedback %}
                         {% if line %}<div class="alert alert-info"
                             style="margin-bottom:8px;padding:10px 14px;font-size:0.82rem;">{{ line }}</div>{% endif %}
@@ -203,7 +202,7 @@
             </div>
         </div>
 
-        <footer class="nx-footer">&copy; 2026 Support Nexus Developer Platform</footer>
+        <footer class="nx-footer">&copy; 2026 Nexus Global Operations Hub</footer>
     </div>
 
     <script>
@@ -213,9 +212,9 @@
         }
 
         const TEMPLATES = {
-            classifier: `def classify_ticket(text):\n    """BERT-enhanced ticket classifier."""\n    text = text.lower()\n    if any(w in text for w in ['crash', 'error', 'broken']):\n        return 'Bug Report'\n    if any(w in text for w in ['bill', 'charge', 'invoice']):\n        return 'Billing Issue'\n    return 'General'\n\n# Test\nprint(classify_ticket("The app crashed again"))`,
+            classifier: `def classify_ticket(text):\n    """Enhanced operational classifier."""\n    text = text.lower()\n    if any(w in text for w in ['crash', 'error', 'broken']):\n        return 'Technical Discrepancy'\n    if any(w in text for w in ['bill', 'charge', 'invoice']):\n        return 'Account/Billing'\n    return 'General Inquiry'\n\n# Test\nprint(classify_ticket("The production system is down"))`,
             sentiment: `def analyze_sentiment(text):\n    """Keyword-based sentiment analysis."""\n    negative = ['angry', 'frustrated', 'terrible', 'broken']\n    positive = ['great', 'love', 'amazing', 'thanks']\n    lc = text.lower()\n    if any(w in lc for w in negative):\n        return 'Negative', 0.85\n    if any(w in lc for w in positive):\n        return 'Positive', 0.90\n    return 'Neutral', 0.60\n\nsentiment, score = analyze_sentiment("This is terrible!")\nprint(f"Sentiment: {sentiment} ({score:.0%})")`,
-            router: `TEAM_MAP = {\n    'frontend': ['css', 'ui', 'button', 'layout'],\n    'backend': ['api', 'server', 'database', 'auth'],\n    'ml': ['model', 'bert', 'ai', 'prediction'],\n}\n\ndef route_ticket(text):\n    lc = text.lower()\n    for team, kws in TEAM_MAP.items():\n        if any(k in lc for k in kws):\n            return team.title()\n    return 'General'\n\nprint(route_ticket("The login API keeps returning 500"))`
+            router: `TEAM_MAP = {\n    'frontend': ['css', 'ui', 'button', 'layout'],\n    'backend': ['api', 'server', 'database', 'auth'],\n    'ml': ['model', 'logic', 'automation', 'prediction'],\n}\n\ndef route_ticket(text):\n    lc = text.lower()\n    for team, kws in TEAM_MAP.items():\n        if any(k in lc for k in kws):\n            return team.title()\n    return 'General'\n\nprint(route_ticket("The login API keeps returning 500"))`
         };
 
         function loadTemplate(name) {

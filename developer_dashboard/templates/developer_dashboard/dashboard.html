@@ -148,11 +148,11 @@
         <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/" class="nx-logo">Support Nexus<span class="nx-logo-dot"></span></a>
+                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot"></span></a>
                 <div class="nx-nav-links">
-                    <a href="/support/">Customer Portal</a>
+                    <a href="/">Customer Portal</a>
                     <a href="/dev/ide/">IDE</a>
-                    <a href="/dev/logic-lab/">Logic Lab</a>
+                    <a href="/dev/logic-lab/">Analysis Suite</a>
                     <span style="color:var(--text-3);font-size:0.82rem;padding:0 8px;">{{ user.username }}</span>
                     <a href="/dev/logout/" class="nx-nav-cta">Sign Out</a>
                 </div>
@@ -184,7 +184,7 @@
                         </svg> All time</div>
                 </div>
                 <div class="metric-tile">
-                    <div class="metric-label">AI Verified</div>
+                    <div class="metric-label">Operational Review</div>
                     <div class="metric-value">{{ verified_count }}</div>
                     <div class="metric-delta" style="color:var(--accent-blue);">Reviewed</div>
                 </div>
@@ -210,12 +210,12 @@
                     <div class="nx-card">
                         <div class="nx-card-header">
                             <div class="nx-card-title">Team Zones</div>
-                            <span class="badge badge-violet">BERT Routing Active</span>
+                            <span class="badge badge-violet">Nexus Routing Active</span>
                         </div>
                         <div class="zone-tabs" style="margin-bottom:20px;">
                             <button class="zone-tab active" onclick="switchZone('backend',this)">Backend</button>
                             <button class="zone-tab" onclick="switchZone('frontend',this)">Frontend</button>
-                            <button class="zone-tab" onclick="switchZone('ml',this)">AI / ML</button>
+                            <button class="zone-tab" onclick="switchZone('systems-logic',this)">Systems Logic</button>
                             <button class="zone-tab" onclick="switchZone('infra',this)">Infrastructure</button>
                             <button class="zone-tab" onclick="switchZone('triage',this)"
                                 style="color:var(--accent-amber);border-color:rgba(246,173,85,0.3);">Triage
@@ -240,8 +240,12 @@
                                     </div>
                                 </div>
                                 <div class="tkt-actions">
-                                    <button class="btn btn-ghost btn-sm"
-                                        onclick="openWhisper({{ t.id }})">Notes</button>
+                                    {% if t.status == 'Open' %}
+                                    <a href="{% url 'update_status' t.id 'In Progress' %}" class="btn btn-ghost btn-sm" style="color:var(--accent-amber);">Investigate</a>
+                                    {% elif t.status == 'In Progress' %}
+                                    <a href="{% url 'update_status' t.id 'Resolved' %}" class="btn btn-ghost btn-sm" style="color:var(--accent-teal);">Resolve</a>
+                                    {% endif %}
+                                    <button class="btn btn-ghost btn-sm" onclick="openWhisper({{ t.id }})">Notes</button>
                                 </div>
                             </div>
                             {% endfor %}
@@ -261,11 +265,11 @@
                             </div>
                         </div>
 
-                        <!-- ML ZONE -->
-                        <div id="zone-ml" class="zone-panel">
+                        <!-- SYSTEMS LOGIC ZONE -->
+                        <div id="zone-systems-logic" class="zone-panel">
                             <div style="text-align:center;padding:32px;color:var(--text-3);">
                                 <div style="font-size:1.8rem;margin-bottom:10px;">🧠</div>
-                                <div>AI/ML Team · Model training in progress</div>
+                                <div>Systems Logic · Analysis in progress</div>
                             </div>
                         </div>
 
@@ -279,8 +283,8 @@
 
                         <!-- TRIAGE POOL -->
                         <div id="zone-triage" class="zone-panel">
-                            <div class="alert alert-amber" style="margin-bottom:16px;">Low-confidence tickets land here
-                                for manual review before routing.</div>
+                            <div class="alert alert-amber" style="margin-bottom:16px;">Cases pending verification land here
+                                for operational review before routing.</div>
                             <div style="text-align:center;padding:24px;color:var(--text-3);">No tickets in triage pool
                             </div>
                         </div>
@@ -331,7 +335,7 @@
                             <div style="display:flex;gap:6px;">
                                 <button class="btn btn-ghost btn-sm" onclick="sendMsg(false)" title="Public reply"
                                     style="border-radius:999px;">Send</button>
-                                <button class="btn btn-amber btn-sm" onclick="sendMsg(true)"
+                                <button class="btn btn-whisper btn-sm" onclick="sendMsg(true)"
                                     title="Internal whisper note" style="border-radius:999px;">🔒 Whisper</button>
                             </div>
                         </div>
@@ -340,8 +344,8 @@
                     <!-- CODE REVIEW -->
                     <div class="nx-card">
                         <div class="nx-card-header">
-                            <div class="nx-card-title">AI Code Reviewer</div>
-                            <span class="badge badge-violet">Gemini Powered</span>
+                            <div class="nx-card-title">Automated Logic Validator</div>
+                            <span class="badge badge-violet">Powered by Nexus Systems Logic</span>
                         </div>
 
                         {% if error %}<div class="alert alert-error" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
@@ -367,13 +371,13 @@
                                     <line x1="12" y1="8" x2="12" y2="13" />
                                     <line x1="12" y1="17" x2="12.01" y2="17" />
                                 </svg>
-                                Review with AI
+                                Review with Systems Logic
                             </button>
                         </form>
 
                         {% if llm_feedback %}
                         <div style="margin-top:22px;">
-                            <p class="sub-heading" style="margin-bottom:12px;">AI Review Findings</p>
+                            <p class="sub-heading" style="margin-bottom:12px;">Analytic Findings</p>
                             {% for line in llm_feedback %}
                             {% if line %}<div class="alert alert-info" style="margin-bottom:8px;padding:10px 14px;">{{
                                 line }}</div>{% endif %}
@@ -423,7 +427,7 @@
                             <div class="nx-card-title">Team Load Monitor</div>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:10px;">
-                            {% with teams="Backend,Frontend,AI/ML,Infrastructure" %}
+                            {% with teams="Backend,Frontend,Intelligent Triage,Infrastructure" %}
                             <div class="team-zone-bar">
                                 <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Backend</span>
                                 <div class="load-bar-bg" style="flex:1;">
@@ -431,8 +435,7 @@
                                         style="width:{% if bug_tickets %}{{ bug_tickets|length|floatformat:0 }}0{% else %}15{% endif %}%;">
                                     </div>
                                 </div>
-                                <span class="badge badge-amber" style="padding:2px 8px;font-size:0.65rem;">{{
-                                    bug_tickets|length }} open</span>
+                                <span class="badge badge-amber" style="padding:2px 8px;font-size:0.65rem;">{{ bug_tickets|length }} open</span>
                             </div>
                             <div class="team-zone-bar">
                                 <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Frontend</span>
@@ -442,10 +445,10 @@
                                 <span class="badge badge-green" style="padding:2px 8px;font-size:0.65rem;">2 open</span>
                             </div>
                             <div class="team-zone-bar">
-                                <span style="font-size:0.82rem;font-weight:500;min-width:100px;">AI / ML</span>
+                                <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Intelligent Triage</span>
                                 <div class="load-bar-bg" style="flex:1;">
                                     <div class="load-bar-fill"
-                                        style="width:10%;background:linear-gradient(90deg,var(--accent-violet),var(--accent-blue));">
+                                        style="width:10%;background:var(--accent-violet);">
                                     </div>
                                 </div>
                                 <span class="badge badge-teal" style="padding:2px 8px;font-size:0.65rem;">1 open</span>
@@ -454,7 +457,7 @@
                                 <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Infra</span>
                                 <div class="load-bar-bg" style="flex:1;">
                                     <div class="load-bar-fill"
-                                        style="width:5%;background:linear-gradient(90deg,var(--accent-green),var(--accent-teal));">
+                                        style="width:5%;background:var(--accent-green);">
                                     </div>
                                 </div>
                                 <span class="badge badge-green" style="padding:2px 8px;font-size:0.65rem;">0 open</span>
@@ -466,7 +469,7 @@
                     <!-- RECENT ACTIVITY -->
                     <div class="nx-card">
                         <div class="nx-card-header">
-                            <div class="nx-card-title">Recent AI Activity</div>
+                            <div class="nx-card-title">Recent System Activity</div>
                         </div>
                         <div style="display:flex;flex-direction:column;gap:8px;">
                             {% for log in recent_activity %}
@@ -477,8 +480,7 @@
                                     {{ log.text }}</div>
                                 <div
                                     style="font-size:0.7rem;color:var(--text-2);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
-                                    <span>{{ log.label }}</span> · <span>{{ log.confidence }}%</span> · <span>{{
-                                        log.time }}</span>
+                                    <span>{{ log.label }}</span> · <span>{{ log.certainty }}% certainty</span> · <span>{{ log.time }}</span>
                                 </div>
                             </div>
                             {% empty %}
@@ -501,7 +503,7 @@
                                     <polyline points="16 18 22 12 16 6" />
                                     <polyline points="8 6 2 12 8 18" />
                                 </svg>
-                                AI Code Editor (IDE)
+                                Operational Logic Studio (IDE)
                             </a>
                             <a href="/dev/logic-lab/" class="btn btn-ghost btn-sm btn-full"
                                 style="justify-content:flex-start;gap:10px;border-radius:10px;">
@@ -510,7 +512,7 @@
                                     <path
                                         d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
                                 </svg>
-                                A/B Test Logic Lab
+                                Strategic Comparison Analysis Suite
                             </a>
                             <a href="/api/v1/classify-ticket/" class="btn btn-ghost btn-sm btn-full"
                                 style="justify-content:flex-start;gap:10px;border-radius:10px;">
@@ -527,17 +529,16 @@
             </div><!-- / dash-layout -->
         </div><!-- / container -->
 
-        <footer class="nx-footer">&copy; 2026 Support Nexus Developer Platform</footer>
+        <footer class="nx-footer">&copy; 2026 Nexus Global Operations Hub</footer>
     </div><!-- / page-wrapper -->
 
     <script>
         // ── CHART ──
         const ctx = document.getElementById('distributionChart');
         if (ctx) {
-            const labels = {{ chart_labels| safe
-        }};
-        const data = {{ chart_data| safe }};
-        const colors = {{ chart_colors| safe }};
+            const labels = {{ chart_labels|safe }};
+        const data = {{ chart_data|safe }};
+        const colors = {{ chart_colors|safe }};
         new Chart(ctx, {
             type: 'doughnut',
             data: {

@@ -5,18 +5,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logic Lab — A/B Testing — Support Nexus</title>
+    <title>Analysis Suite — Strategy Audit — Nexus</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
 </head>
 
 <body>
-    <div class="mesh-bg"></div>
     <div class="page-wrapper">
 
         <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/dev/" class="nx-logo">Support Nexus<span class="nx-logo-dot"></span></a>
+                <a href="/dev/" class="nx-logo">Nexus<span class="nx-logo-dot"></span></a>
                 <div class="nx-nav-links">
                     <a href="/dev/">Dashboard</a>
                     <a href="/dev/ide/">IDE</a>
@@ -30,17 +29,17 @@
 
             <!-- HEADER -->
             <div style="margin-bottom:32px;" class="anim-fade-up">
-                <p class="sub-heading">AI Decision Intelligence</p>
-                <h1 class="heading-md" style="margin-bottom:10px;">Logic Lab</h1>
-                <p class="body-sm">Compare two support flow strategies and let Gemini AI predict which will improve
-                    resolution speed and customer satisfaction.</p>
+                <p class="sub-heading">Operational Decision Audit</p>
+                <h1 class="heading-md" style="margin-bottom:10px;">Analysis Suite</h1>
+                <p class="body-sm">Compare two support flow strategies and audit which will improve
+                    resolution speed and operational stability.</p>
             </div>
 
             <!-- FORM -->
             <div class="glass anim-fade-up delay-1" style="padding:36px;margin-bottom:24px;">
                 <div class="nx-card-header" style="margin-bottom:24px;">
-                    <div class="nx-card-title">A/B Strategy Comparison</div>
-                    <span class="badge badge-violet">Gemini AI</span>
+                    <div class="nx-card-title">Strategic Comparison Audit</div>
+                    <span class="badge badge-blue">Systems Logic Monitor</span>
                 </div>
 
                 {% if error %}<div class="alert alert-error" style="margin-bottom:20px;">{{ error }}</div>{% endif %}
@@ -64,16 +63,16 @@
                             viewBox="0 0 24 24">
                             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
                         </svg>
-                        Run AI Prediction
+                        Run Comparative Audit
                     </button>
                 </form>
             </div>
 
             <!-- PREDICTION RESULT -->
             {% if prediction_result %}
-            <div class="glass anim-fade-up" style="padding:32px;margin-bottom:24px;border-color:rgba(167,139,250,0.2);">
+            <div class="glass anim-fade-up" style="padding:32px;margin-bottom:24px;">
                 <div class="nx-card-header" style="margin-bottom:20px;">
-                    <div class="nx-card-title">Gemini Prediction</div>
+                    <div class="nx-card-title">Audit Finding</div>
                     <span class="badge badge-green">Analysis Complete</span>
                 </div>
                 <div style="white-space:pre-wrap;font-size:0.9rem;line-height:1.75;color:var(--text-1);">{{
@@ -85,7 +84,7 @@
             {% if past_predictions %}
             <div class="nx-card anim-fade-up delay-2">
                 <div class="nx-card-header" style="margin-bottom:20px;">
-                    <div class="nx-card-title">Your Past Predictions</div>
+                    <div class="nx-card-title">Saved Operational Audits</div>
                     <span class="badge badge-blue">{{ past_predictions|length }} Saved</span>
                 </div>
                 <div style="display:flex;flex-direction:column;gap:12px;">
@@ -106,7 +105,7 @@
                         </div>
                         <div class="glow-line" style="margin:10px 0;"></div>
                         <div style="font-size:0.8rem;color:var(--text-2);white-space:pre-wrap;">{{
-                            pred.prediction_result|truncatechars:200 }}</div>
+                            pred.comparison_result|truncatechars:200 }}</div>
                         <div style="font-size:0.7rem;color:var(--text-3);margin-top:8px;">{{ pred.created_at|date:"M d,
                             H:i" }}</div>
                     </div>
@@ -127,7 +126,7 @@
 
         </div>
 
-        <footer class="nx-footer">&copy; 2026 Support Nexus Developer Platform</footer>
+        <footer class="nx-footer">&copy; 2026 Nexus Global Operations Hub</footer>
     </div>
 </body>
 

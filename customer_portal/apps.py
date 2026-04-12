@@ -14,7 +14,7 @@ class CustomerPortalConfig(AppConfig):
         if os.environ.get('RUN_MAIN', None) != 'true':
             return
 
-        print("[Nexus Quantum] Initializing NLP models for Customer Portal...")
+        print("[Nexus Quantum] Initializing Case Triage Systems...")
 
         # 1. Load Custom BERT (Ticket Classifier)
         try:
@@ -32,20 +32,19 @@ class CustomerPortalConfig(AppConfig):
                 )
                 CustomerPortalConfig.model.to("cpu")
                 CustomerPortalConfig.model.eval()
-                print("[Nexus Quantum] ✅ BERT Ticket Classifier loaded into memory!")
+                print("[Nexus Quantum] ✅ Intelligent Triage Engine Online!")
             else:
-                print("[Nexus Quantum] WARNING: BERT model not found at {MODEL_PATH}. Using simulation fallback.")
+                print("[Nexus Quantum] WARNING: Triage engine model not found. Using operational fallback.")
         except ImportError:
-            print("[Nexus Quantum] WARNING: 'transformers' or 'torch' not installed. BERT model unavailable.")
+            print("[Nexus Quantum] WARNING: Essential processing libraries not installed. Triage engine unavailable.")
         except Exception as e:
-            print(f"[Nexus Quantum] WARNING: Error loading BERT model: {e}")
+            print(f"[Nexus Quantum] WARNING: Error initializing triage engine: {e}")
 
-        # 2. Load Content Moderation (Toxic Comment Model) — disabled to save memory
-        # Uncomment to enable real ML moderation:
+        # 2. Load Content Analytics (Sentiment/Tone Analysis)
         # try:
         #     from transformers import pipeline
         #     CustomerPortalConfig.moderation_pipeline = pipeline("text-classification", model="martin-ha/toxic-comment-model")
-        #     print("[Nexus Quantum] ✅ Content Moderation model loaded!")
+        #     print("[Nexus Quantum] ✅ Analytic Tone Analysis Online!")
         # except Exception as e:
         #     print(f"[Nexus Quantum] WARNING: Moderation model error: {e}")
 
