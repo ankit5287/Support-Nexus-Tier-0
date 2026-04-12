@@ -33,14 +33,14 @@ class AITrainingLog(models.Model):
         ('AI/ML', 'AI/ML'),
     ]
     PRIORITY_CHOICES = [
-        ('Low', 'Low'),
-        ('Medium', 'Medium'),
-        ('High', 'High'),
+        ('P3', 'P3 - Standard'),
+        ('P2', 'P2 - Important'),
+        ('P1', 'P1 - Critical'),
     ]
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Open')
     assigned_team = models.CharField(max_length=20, choices=TEAM_CHOICES, default='Backend')
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='Medium')
+    priority = models.CharField(max_length=15, choices=PRIORITY_CHOICES, default='P3')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

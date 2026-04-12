@@ -104,11 +104,15 @@ def index(request):
             elif any(w in input_lower for w in backend_keywords):
                 squad = "Backend"
 
-            # Priority logic
-            prio = "Medium"
-            high_prio_keywords = ["urgent", "broken", "critical", "blocking", "emergency", "crash", "crashed"]
-            if any(w in input_lower for w in high_prio_keywords):
-                prio = "High"
+            # Priority logic: Weighted Urgency Scoring (P1/P2/P3)
+            prio = "P3"
+            p1_keywords = ["urgent", "emergency", "security", "data loss", "outage", "production", "crash", "crashed", "blocking", "critical"]
+            p2_keywords = ["broken", "bug", "can't access", "regression", "error", "failed", "issue", "problem"]
+            
+            if any(w in input_lower for w in p1_keywords):
+                prio = "P1"
+            elif any(w in input_lower for w in p2_keywords):
+                prio = "P2"
 
             if tokenizer and model:
                 import torch
@@ -193,9 +197,9 @@ def _get_user_tickets(user):
     from .models import AITrainingLog
     # Customer-friendly Priority Mapping
     URGENCY_MAP = {
-        'Low': 'Standard',
-        'Medium': 'Important',
-        'High': 'Urgent 🔥'
+        'P3': 'Standard',
+        'P2': 'Important',
+        'P1': 'Urgent 🔥'
     }
     
     # Customer-friendly Status Mapping

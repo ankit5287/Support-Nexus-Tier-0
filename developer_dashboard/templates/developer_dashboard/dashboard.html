@@ -228,15 +228,15 @@
                             {% for t in bug_tickets %}
                             <div class="tkt">
                                 <div class="tkt-prio"
-                                    style="background:{% if t.priority == 'High' %}var(--accent-rose);box-shadow:0 0 6px var(--accent-rose);{% elif t.priority == 'Medium' %}var(--accent-amber);box-shadow:0 0 6px var(--accent-amber);{% else %}var(--accent-green);{% endif %}">
+                                    style="background:{% if t.priority == 'P1' %}var(--accent-rose);box-shadow:0 0 8px var(--accent-rose);{% elif t.priority == 'P2' %}var(--accent-amber);{% else %}var(--accent-green);{% endif %}">
                                 </div>
                                 <div class="tkt-body">
                                     <div class="tkt-title">{{ t.title }}</div>
                                     <div class="tkt-meta">
                                         <span>#{{ t.id }}</span> · <span>{{ t.date }}</span> · <span>{{ t.user }}</span>
                                         <span
-                                            class="badge {% if t.priority == 'High' %}badge-rose{% elif t.priority == 'Medium' %}badge-amber{% else %}badge-green{% endif %}"
-                                            style="padding:1px 8px;font-size:0.65rem;">{{ t.priority }}</span>
+                                            class="badge {% if t.priority == 'P1' %}badge-rose{% elif t.priority == 'P2' %}badge-amber{% else %}badge-green{% endif %}"
+                                            style="padding:1px 8px;font-size:0.65rem;font-weight:700;">{{ t.priority }}</span>
                                     </div>
                                 </div>
                                 <div class="tkt-actions">
