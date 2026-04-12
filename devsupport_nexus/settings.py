@@ -119,4 +119,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-# Force reload
+# --- ENTERPRISE STATIC CONFIG ---
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]

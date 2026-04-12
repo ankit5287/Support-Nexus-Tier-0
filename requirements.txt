@@ -7,3 +7,6 @@ datasets
 pandas
 sentence-transformers
 faiss-cpu
+google-generativeai
+spacy
+scikit-learn

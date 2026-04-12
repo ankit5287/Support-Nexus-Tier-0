@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Logic Lab | A/B Prediction</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --bg: #0b0e14;
+            --bg-alt: #0d1117;
+            --card: #161b22;
+            --card-hover: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --border: #30363d;
+            --accent-glow: rgba(88, 166, 255, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        nav {
+            background: rgba(11, 14, 20, 0.85);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+        }
+        .logo { font-weight: 700; color: #fff; text-decoration: none; font-size: 1.1rem; }
+
+        .container {
+            max-width: 1000px;
+            margin: 60px auto;
+            padding: 0 30px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        h1 { font-size: 2.5rem; font-weight: 800; margin-top: 0; margin-bottom: 10px; text-align: center; color: #fff; letter-spacing: -1.5px; }
+        p.subtitle { text-align: center; color: var(--text-muted); margin-bottom: 50px; font-size: 1.1rem; }
+
+        .ab-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 35px;
+        }
+
+        label { display: block; margin-bottom: 12px; font-weight: 700; font-size: 0.8rem; color: var(--accent); text-transform: uppercase; letter-spacing: 1.5px; }
+
+        textarea {
+            width: 100%;
+            height: 220px;
+            padding: 22px;
+            background: var(--bg-alt);
+            color: #fff;
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            font-family: inherit;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+            resize: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); transform: scale(1.01); }
+
+        .btn-predict {
+            background: var(--accent);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 15px rgba(88, 166, 255, 0.2);
+        }
+        .btn-predict:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 12px 25px rgba(88, 166, 255, 0.3); }
+
+        .result-box {
+            margin-top: 50px;
+            padding: 35px;
+            background: var(--bg-alt);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            animation: fadeIn 0.8s ease;
+        }
+        pre { white-space: pre-wrap; word-wrap: break-word; font-family: 'Inter', sans-serif; line-height: 1.6; color: var(--text-primary); font-size: 1rem; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-content">
+            <a href="/dev/" class="logo">Nexus Logic Lab</a>
+            <div style="font-size: 0.85rem;">
+                <a href="/dev/" style="color: var(--accent); text-decoration: none;">&larr; Back to Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h1>A/B Outcome Prediction</h1>
+            <p class="subtitle">Pillar 3: Neural Analysis of Support & Feature Strategies.</p>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="ab-grid">
+                    <div>
+                        <label>Strategy A (Current)</label>
+                        <textarea name="flow_a" placeholder="e.g. Redirect all hardware issues to manual ticket submission." required></textarea>
+                    </div>
+                    <div>
+                        <label>Strategy B (Proposed)</label>
+                        <textarea name="flow_b" placeholder="e.g. Use Neural Diagnostics to attempt auto-repair via NexusOS firmware patch." required></textarea>
+                    </div>
+                </div>
+                <button type="submit" class="btn-predict">Predict Optimal Strategy ✨</button>
+            </form>
+
+            {% if prediction_result %}
+                <div class="result-box">
+                    <h2 style="margin-top:0; color: var(--accent);">🔬 Neural Prediction Report</h2>
+                    <pre>{{ prediction_result }}</pre>
+                </div>
+            {% endif %}
+
+            {% if error %}
+                <div class="result-box" style="background: #fff2f1; border-color: #ffa39e; color: #d70015;">
+                    ⚠️ {{ error }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+</html>

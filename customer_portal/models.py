@@ -1,6 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class AITrainingLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     ticket_text = models.TextField()
     predicted_label = models.CharField(max_length=100)
     
@@ -19,7 +21,29 @@ class AITrainingLog(models.Model):
     # Optional explanation for the correction (audit trail)
     correction_reason = models.CharField(max_length=255, blank=True, null=True)
     
+    # Enterprise Workflow Fields
+    STATUS_CHOICES = [
+        ('Open', 'Open'),
+        ('In Progress', 'In Progress'),
+        ('Resolved', 'Resolved'),
+    ]
+    TEAM_CHOICES = [
+        ('Frontend', 'Frontend'),
+        ('Backend', 'Backend'),
+        ('AI/ML', 'AI/ML'),
+    ]
+    PRIORITY_CHOICES = [
+        ('Low', 'Low'),
+        ('Medium', 'Medium'),
+        ('High', 'High'),
+    ]
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Open')
+    assigned_team = models.CharField(max_length=20, choices=TEAM_CHOICES, default='Backend')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='Medium')
+
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     reviewed_at = models.DateTimeField(blank=True, null=True)
 
     @property

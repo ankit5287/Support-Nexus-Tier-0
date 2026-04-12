@@ -24,5 +24,5 @@ urlpatterns = [
     path('dev/', include('developer_dashboard.urls')),
     
     # Microservices API Route
-    path('api/v1/classify-ticket', classify_ticket_api, name='classify_ticket_api'),
+    path('api/v1/classify-ticket/', classify_ticket_api, name='classify_ticket_api'),
 ]

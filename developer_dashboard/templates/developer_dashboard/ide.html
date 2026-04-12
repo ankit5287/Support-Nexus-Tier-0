@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Squad IDE | Support Nexus</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            background-color: #161b22;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .logo { font-weight: 700; color: #58a6ff; font-size: 1.1rem; text-decoration: none; }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 10px 20px;
+            background-color: #0d1117;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .btn {
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn:hover { background-color: #30363d; }
+        .btn-primary { background-color: #238636; color: white; border-color: #2ea043; }
+        .btn-primary:hover { background-color: #2ea043; }
+
+        .ide-container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #0d1117;
+            border-right: 1px solid #30363d;
+            padding: 20px;
+            font-size: 0.85rem;
+        }
+
+        .editor-area {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #0d1117;
+        }
+
+        textarea {
+            flex-grow: 1;
+            background: #0d1117;
+            color: #d1d5db;
+            border: none;
+            padding: 20px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+        }
+
+        .output-panel {
+            height: 200px;
+            background-color: #161b22;
+            border-top: 1px solid #30363d;
+            padding: 15px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            overflow-y: auto;
+        }
+
+        .diff-panel {
+            position: fixed;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        pre.diff {
+            margin: 0;
+            padding: 20px;
+            background: #0d1117;
+            overflow: auto;
+            flex-grow: 1;
+            font-size: 13px;
+        }
+        .diff-add { color: #3fb950; background: rgba(46, 160, 67, 0.15); }
+        .diff-rem { color: #f85149; background: rgba(248, 81, 73, 0.15); }
+
+        .badge {
+            background: rgba(88, 166, 255, 0.1);
+            color: #58a6ff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/dev/" class="logo">Nexus Quantum / {{ user.username }}</a>
+    <div>
+        <span class="badge">Branch: feature/squad-triage-v2</span>
+        <a href="/dev/logout/" style="color: #8b949e; text-decoration: none; font-size: 0.8rem; margin-left: 20px;">Logout</a>
+    </div>
+</header>
+
+<form method="POST" style="display: flex; flex-direction: column; flex-grow: 1;">
+    {% csrf_token %}
+    <div class="toolbar">
+        <button type="submit" name="action" value="run" class="btn">▶ Run</button>
+        <button type="submit" name="action" value="polish" class="btn">✨ AI Polish</button>
+        <button type="submit" name="action" value="merge" class="btn btn-primary">⤴ Merge to Main</button>
+        <div style="flex-grow: 1;"></div>
+        <span style="font-size: 0.8rem; align-self: center;">Language: <strong>Python</strong></span>
+    </div>
+
+    <div class="ide-container">
+        <div class="sidebar">
+            <h4 style="color: #8b949e; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px;">Files</h4>
+            <div style="color: #58a6ff; margin-bottom: 8px;">📄 triage_logic.py</div>
+            <div style="color: #8b949e; margin-bottom: 8px;">📄 models.py</div>
+            <div style="color: #8b949e; margin-bottom: 8px;">📄 tests.py</div>
+            
+            <h4 style="color: #8b949e; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; margin-top: 30px;">Active Squad</h4>
+            <div style="color: #3fb950;">🟢 Frontend Squad</div>
+        </div>
+
+        <div class="editor-area">
+            <textarea name="code">{{ current_code }}</textarea>
+            
+            <div class="output-panel">
+                <span style="color: #8b949e;">Console:</span>
+                {% if run_output %}
+                    <div style="color: #d1d5db; margin-top: 10px; white-space: pre-wrap;">{{ run_output }}</div>
+                {% else %}
+                    <div style="color: #484f58; margin-top: 10px;">Idle...</div>
+                {% endif %}
+                
+                {% if success %}<div style="color: #3fb950; margin-top: 10px;">{{ success }}</div>{% endif %}
+                {% if error %}<div style="color: #f85149; margin-top: 10px;">{{ error }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+</form>
+
+{% if is_merge_view %}
+<div class="diff-panel">
+    <div style="padding: 15px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between;">
+        <span style="font-weight: 600;">Merge Comparison: feature -> main</span>
+        <a href="/dev/ide/" style="color: #8b949e; text-decoration: none;">✕</a>
+    </div>
+    <pre class="diff">{% for line in diff_output.splitlines %}<div class="{% if line.0 == '+' %}diff-add{% elif line.0 == '-' %}diff-rem{% endif %}">{{ line }}</div>{% endfor %}</pre>
+    <div style="padding: 15px; border-top: 1px solid #30363d; text-align: right;">
+        <button class="btn btn-primary" onclick="alert('Merge Successful! Pipeline triggered.')">Confirm Merge</button>
+    </div>
+</div>
+{% endif %}
+
+</body>
+</html>

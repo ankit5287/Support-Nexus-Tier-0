@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Nexus Quantum</title>
+    <title>Join Nexus Quantum</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -15,58 +15,36 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             -webkit-font-smoothing: antialiased;
         }
 
-        .login-container {
+        .signup-container {
             width: 100%;
-            max-width: 450px;
+            max-width: 460px;
             padding: 40px;
             text-align: center;
         }
 
-        .apple-logo {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            display: block;
-        }
+        .brand-icon { font-size: 3rem; margin-bottom: 20px; display: block; }
+        h1 { font-size: 2rem; font-weight: 600; margin-bottom: 10px; }
+        p.subtitle { color: #86868b; margin-bottom: 35px; font-size: 1rem; }
 
-        h1 {
-            font-size: 2.2rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            letter-spacing: -0.5px;
-        }
-
-        p.subtitle {
-            color: #86868b;
-            margin-bottom: 40px;
-            font-size: 1.1rem;
-        }
-
-        .input-group {
-            margin-bottom: 30px;
-            text-align: left;
-        }
+        .input-group { margin-bottom: 25px; text-align: left; }
 
         input {
             width: 100%;
-            padding: 15px 15px;
+            padding: 15px;
             border: 1px solid #d2d2d7;
             border-radius: 12px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-family: 'Inter', sans-serif;
             box-sizing: border-box;
             outline: none;
             transition: all 0.3s;
             margin-bottom: 12px;
         }
-
-        input:focus {
-            border-color: #0066cc;
-            box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
-        }
+        input:focus { border-color: #0066cc; box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1); }
 
         .btn-submit {
             background-color: #0066cc;
@@ -80,10 +58,7 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-
-        .btn-submit:hover {
-            background-color: #0077ee;
-        }
+        .btn-submit:hover { background-color: #0077ee; }
 
         .error-message {
             background-color: #fff2f1;
@@ -91,51 +66,44 @@
             color: #d70015;
             padding: 12px;
             border-radius: 8px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             font-size: 0.9rem;
         }
 
         .footer-links {
-            margin-top: 40px;
+            margin-top: 30px;
             border-top: 1px solid #d2d2d7;
-            padding-top: 25px;
-            font-size: 0.8rem;
+            padding-top: 20px;
+            font-size: 0.85rem;
             color: #86868b;
         }
-
-        .footer-links a {
-            color: #0066cc;
-            text-decoration: none;
-            margin: 0 10px;
-        }
+        .footer-links a { color: #0066cc; text-decoration: none; }
     </style>
 </head>
 <body>
 
-<div class="login-container">
-    <span class="apple-logo">⚛️</span>
-    <h1>Sign In</h1>
-    <p class="subtitle">Sign in to manage your Nexus Quantum devices and support requests.</p>
+<div class="signup-container">
+    <span class="brand-icon">⚛️</span>
+    <h1>Create Your Account</h1>
+    <p class="subtitle">Manage your devices and get expert help with one account.</p>
 
     {% if error %}
-    <div class="error-message">
-        {{ error }}
-    </div>
+    <div class="error-message">{{ error }}</div>
     {% endif %}
 
-    <form method="POST" action="{% url 'dev_login' %}">
+    <form method="POST" action="{% url 'dev_signup' %}">
         {% csrf_token %}
         <div class="input-group">
-            <input type="text" name="username" placeholder="Username" required autocomplete="username">
-            <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+            <input type="text" name="username" placeholder="Choose a username" required autocomplete="username">
+            <input type="email" name="email" placeholder="Email address" required autocomplete="email">
+            <input type="password" name="password" placeholder="Create password (min 6 chars)" required autocomplete="new-password">
+            <input type="password" name="password2" placeholder="Confirm password" required autocomplete="new-password">
         </div>
-        <button type="submit" class="btn-submit">Sign In</button>
+        <button type="submit" class="btn-submit">Sign Up</button>
     </form>
 
     <div class="footer-links">
-        <a href="#">Forgot your password?</a>
-        <span>|</span>
-        <a href="{% url 'dev_signup' %}">Create an account</a>
+        Already have an account? <a href="{% url 'dev_login' %}">Sign In</a>
     </div>
 </div>
 

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Help Center</title>
+    <style>
+    <style>
+        :root {
+            --bg: #0b0e14;
+            --bg-alt: #0d1117;
+            --card: #161b22;
+            --card-hover: #1c2128;
+            --text-primary: #f0f6fc;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --border: #30363d;
+            --accent-glow: rgba(88, 166, 255, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Navbar */
+        nav {
+            background: rgba(11, 14, 20, 0.85);
+            backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .nav-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        .logo { font-weight: 700; font-size: 1.3rem; letter-spacing: -0.7px; color: #fff; }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-left: 25px;
+            transition: all 0.3s;
+        }
+        .nav-links a:hover { color: var(--accent); }
+
+        /* Hero */
+        .hero {
+            padding: 120px 20px;
+            text-align: center;
+            background: radial-gradient(circle at top, #1c2128 0%, #0b0e14 70%);
+        }
+        .hero h1 { 
+            font-size: 4rem; 
+            font-weight: 800; 
+            margin-bottom: 15px; 
+            letter-spacing: -2px;
+            background: linear-gradient(180deg, #fff 0%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .search-container {
+            max-width: 700px;
+            margin: 50px auto;
+            position: relative;
+        }
+        .search-bar {
+            width: 100%;
+            padding: 22px 35px;
+            border-radius: 40px;
+            border: 1px solid var(--border);
+            background: var(--bg-alt);
+            color: #fff;
+            font-size: 1.2rem;
+            outline: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .search-bar:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+            transform: scale(1.02);
+        }
+
+        /* Product Tiles */
+        .product-section {
+            max-width: 1100px;
+            margin: 80px auto;
+            padding: 0 20px;
+        }
+        .section-title { font-size: 2rem; font-weight: 700; margin-bottom: 50px; text-align: center; color: #fff; }
+        .tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        .tile {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 45px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            text-decoration: none;
+            color: inherit;
+        }
+        .tile:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            border-color: var(--accent);
+            background: var(--card-hover);
+        }
+        .tile-icon { font-size: 3rem; margin-bottom: 25px; display: block; filter: drop-shadow(0 0 10px rgba(88,166,255,0.3)); }
+        .tile h3 { font-size: 1.5rem; margin-bottom: 12px; color: #fff; font-weight: 700; }
+        .tile p { color: var(--text-muted); line-height: 1.6; font-size: 1rem; }
+
+        /* Contact Section */
+        .contact-box {
+            background-color: var(--bg-alt);
+            padding: 120px 20px;
+            text-align: center;
+            margin-top: 100px;
+            border-top: 1px solid var(--border);
+        }
+        .btn-blue {
+            background-color: var(--accent);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 16px 36px;
+            border-radius: 980px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: inline-block;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(88,166,255,0.25);
+        }
+        .btn-blue:hover { transform: translateY(-3px) scale(1.03); background-color: #79c0ff; box-shadow: 0 12px 30px rgba(88,166,255,0.4); }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-content">
+            <div class="logo">Nexus Quantum</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/support/">Get Help</a>
+                <a href="/dev/">Developer Portal</a>
+                {% if user.is_authenticated %}
+                    <a href="/dev/logout/" style="color: #0066cc;">Sign Out ({{ user.username }})</a>
+                {% else %}
+                    <a href="/dev/login/" style="color: #0066cc;">Sign In</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <h1>How can we help today?</h1>
+        <div class="search-container">
+            <input type="text" class="search-bar" placeholder="Search for help with your device or account...">
+        </div>
+    </div>
+
+    <div class="product-section">
+        <h2 class="section-title">Essential Nexus Support</h2>
+        <div class="tile-grid">
+            <a href="/support/" class="tile">
+                <span class="tile-icon">📱</span>
+                <h3>Hardware & Devices</h3>
+                <p>Help with your Quantum Pro device, hardware setup, and connections.</p>
+            </a>
+            <a href="/support/" class="tile">
+                <span class="tile-icon">🧠</span>
+                <h3>Software & Apps</h3>
+                <p>Help with updates, app features, and managing your account.</p>
+            </a>
+            <a href="/dev/" class="tile">
+                <span class="tile-icon">💻</span>
+                <h3>Developer Resources</h3>
+                <p>Guides and tools for those building the future with Nexus.</p>
+            </a>
+        </div>
+    </div>
+
+    <div class="contact-box">
+        <h2 style="font-size: 2.5rem; margin-bottom: 20px;">Still need help?</h2>
+        <p style="color: #86868b; margin-bottom: 30px; font-size: 1.2rem;">Our team of specialists is here to assist you.</p>
+        <a href="/support/" class="btn-blue">Contact Us</a>
+    </div>
+
+</body>
+</html>
