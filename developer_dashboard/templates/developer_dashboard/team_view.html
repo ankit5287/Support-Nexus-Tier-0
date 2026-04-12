@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ team_name }} — Nexus Global</title>
+    <title>{{ team_name }} — Specialist View — Nexus</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <style>
         .team-layout {
@@ -20,16 +20,6 @@
         .team-main, .team-sidebar {
             background: #000;
             padding: 40px;
-        }
-
-        .dev-card {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px;
-            border: 1px solid var(--border-subtle);
-            background: rgba(255,255,255,0.01);
-            margin-bottom: 12px;
         }
 
         .node-accent {
@@ -52,14 +42,13 @@
             align-items: center;
         }
         .ticket-row:hover { background: var(--bg-surface); }
+        .ticket-row.highlight { background: rgba(182, 208, 226, 0.05); border-left: 2px solid var(--accent-periwinkle); }
 
-        .transfer-select {
-            background: #000;
-            color: #fff;
+        .metadata-box {
+            background: rgba(255,255,255,0.01);
             border: 1px solid var(--border-subtle);
-            padding: 4px 8px;
-            font-size: 0.7rem;
-            border-radius: 2px;
+            padding: 24px;
+            margin-bottom: 32px;
         }
     </style>
 </head>
@@ -87,33 +76,57 @@
 
         <div class="container section anim-liquid-fade">
             
-            <div style="position:relative; overflow:hidden; border:1px solid var(--border-subtle); background:#000; padding:48px;">
+            <div style="position:relative; overflow:hidden; border:1px solid var(--border-subtle); background:#000; padding:48px; margin-bottom:40px;">
                 <div class="node-accent {% if team_name == 'Systems Engine' %}systems-accent{% elif team_name == 'Creative Architecture' %}creative-accent{% else %}neural-accent{% endif %}"></div>
                 <div style="display:flex; justify-content:space-between; align-items:flex-end;">
                     <div>
                         <h1 class="heading-md" style="font-size:2rem; margin-bottom:8px;">{{ team_name }}</h1>
-                        <p class="body-sm">Specialized Operational Node — Lifecycle Distribution</p>
+                        <p class="body-sm">Operational Task Distribution Layer — Domain Integrity Mode</p>
                     </div>
                     <div style="text-align:right;">
-                        <a href="{% url 'dashboard' %}" class="btn btn-ghost" style="padding:8px 20px;">← Return to Command Center</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-ghost" style="padding:8px 20px;">← Back to Command Center</a>
                     </div>
                 </div>
             </div>
 
+            {% if focus_ticket %}
+            <div class="metadata-box anim-liquid-fade">
+                <h3 class="kpi-label" style="margin-bottom:16px; color:var(--accent-periwinkle);">Deep-Dive: LOG-{{ focus_ticket.id }}</h3>
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:20px;">
+                    <div>
+                        <div class="monitor-label" style="font-size:0.6rem;">Conceptual Intent</div>
+                        <div style="color:#fff; font-size:1rem; margin-top:4px;">{{ focus_ticket.classification }}</div>
+                    </div>
+                    <div>
+                        <div class="monitor-label" style="font-size:0.6rem;">Specialist Urgency</div>
+                        <div style="color:#fff; font-size:1rem; margin-top:4px;">{{ focus_ticket.priority }}</div>
+                    </div>
+                    <div>
+                        <div class="monitor-label" style="font-size:0.6rem;">AI Logic Certainty</div>
+                        <div style="color:var(--accent-sage); font-size:1rem; margin-top:4px;">{{ focus_ticket.system_certainty }}%</div>
+                    </div>
+                </div>
+                <div style="margin-top:24px; padding-top:24px; border-top:1px solid var(--border-subtle);">
+                    <div class="monitor-label" style="font-size:0.6rem;">Full Operational Briefing</div>
+                    <p class="body-sm" style="margin-top:8px; line-height:1.6;">{{ focus_ticket.ticket_text }}</p>
+                </div>
+            </div>
+            {% endif %}
+
             <div class="team-layout">
                 <div class="team-main">
-                    <h2 class="kpi-label" style="margin-bottom:32px;">Node Tasks</h2>
+                    <h2 class="kpi-label" style="margin-bottom:32px;">Operational Task Pool</h2>
                     
                     <div style="background: var(--border-subtle); border: 1px solid var(--border-subtle);">
                         <div class="ticket-row" style="background: var(--bg-surface); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; color: var(--text-3);">
                             <div>ID</div>
-                            <div>Brief</div>
+                            <div>Briefing Abstract</div>
                             <div>Status</div>
-                            <div>Re-Route</div>
+                            <div>Action</div>
                         </div>
 
                         {% for t in team_tickets %}
-                        <div class="ticket-row">
+                        <div class="ticket-row {% if focus_ticket.id == t.id %}highlight{% endif %}">
                             <div class="ticket-id">LOG-{{ t.id }}</div>
                             <div class="ticket-info">
                                 <span class="ticket-subject">{{ t.ticket_text|truncatechars:100 }}</span>
@@ -128,7 +141,7 @@
                                 <form action="{% url 'transfer_ticket' t.id %}" method="POST" style="display:flex; gap:8px;">
                                     {% csrf_token %}
                                     <select name="target_team" class="transfer-select">
-                                        <option value="">Move to...</option>
+                                        <option value="">Transfer...</option>
                                         <option value="Systems Engine">Systems Engine</option>
                                         <option value="Creative Architecture">Creative Architecture</option>
                                         <option value="Neural Insights">Neural Insights</option>
@@ -146,7 +159,7 @@
                 </div>
 
                 <div class="team-sidebar">
-                    <h4 class="kpi-label" style="margin-bottom:32px;">Active Specialists</h4>
+                    <h4 class="kpi-label" style="margin-bottom:32px;">Specialist Availability</h4>
                     
                     {% for dev in accountability_list %}
                     <div class="dev-card">

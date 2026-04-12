@@ -12,6 +12,46 @@ def staff_required(user):
     return user.is_staff
 
 
+def search_suggest(request):
+    """Google-Style Autocomplete API."""
+    from customer_portal.models import SupportCase
+    from django.http import JsonResponse
+    
+    query = request.GET.get('q', '').lower()
+    if not query:
+        return JsonResponse({'suggestions': []})
+        
+    # Pool of potential suggestions: Unique ticket titles and Common CRM Queries
+    common_queries = [
+        "lead import timeout", "navigation lag in firefox", "bert re-classification",
+        "database connection error", "api latency spikes", "sso authentication failure",
+        "css layout breakage", "backend performance audit", "ui responsive issues"
+    ]
+    
+    # Existing ticket snippets with IDs
+    ticket_data = list(SupportCase.objects.values('id', 'ticket_text').distinct()[:30])
+    
+    pool = []
+    for cq in common_queries:
+        pool.append({'val': cq, 'id': None})
+    for t in ticket_data:
+        pool.append({'val': t['ticket_text'][:100], 'id': t['id']})
+    
+    # Filter based on partial match
+    suggestions = [item for item in pool if query in item['val'].lower()][:8]
+    
+    return JsonResponse({'suggestions': suggestions})
+
+
+def highlight_matches(text, query):
+    """Wraps matches in Pastel Sage highlights."""
+    import re
+    if not query: return text
+    
+    pattern = re.compile(f'({re.escape(query)})', re.IGNORECASE)
+    return pattern.sub(r'<mark style="background:var(--accent-sage); color:#000; padding:0 2px; border-radius:2px;">\1</mark>', text)
+
+
 @login_required(login_url='/dev/login/')
 @user_passes_test(staff_required, login_url='/')
 def dashboard(request):
@@ -33,30 +73,33 @@ def dashboard(request):
     if active_team:
         cases_query = cases_query.filter(assigned_team=active_team)
     
+    # --- FOCUS HIGHLIGHT LOGIC ---
+    focus_id = request.GET.get('focus')
+    final_tickets = []
+    
     if query:
         from .semantic_search import semantic_ticket_query
         search_results = semantic_ticket_query(query)
         if active_team:
             search_results = [r for r in search_results if r.assigned_team == active_team]
         
-        context['bug_tickets'] = [
-            {
+        for log in search_results:
+            final_tickets.append({
                 "id": log.id,
-                "title": log.ticket_text[:80],
+                "title": highlight_matches(log.ticket_text[:120], query),
                 "status": log.status,
                 "priority": log.priority,
                 "team": log.assigned_team,
                 "user": log.user.username if log.user else "Anonymous",
                 "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
-                "date": log.created_at.strftime('%b %d')
-            }
-            for log in search_results
-        ]
+                "date": log.created_at.strftime('%b %d'),
+                "is_focus": str(log.id) == str(focus_id)
+            })
         context['is_search'] = True
     else:
         cases = cases_query.order_by('-created_at')[:15]
-        context['bug_tickets'] = [
-            {
+        for log in cases:
+            final_tickets.append({
                 "id": log.id,
                 "title": log.ticket_text[:80],
                 "status": log.status,
@@ -64,10 +107,30 @@ def dashboard(request):
                 "team": log.assigned_team,
                 "user": log.user.username if log.user else "Anonymous",
                 "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
-                "date": log.created_at.strftime('%b %d')
-            }
-            for log in cases
-        ]
+                "date": log.created_at.strftime('%b %d'),
+                "is_focus": str(log.id) == str(focus_id)
+            })
+
+    # If focused but not in list, bring to top
+    if focus_id and not any(t['id'] == int(focus_id) for t in final_tickets):
+        try:
+            log = SupportCase.objects.get(id=focus_id)
+            final_tickets.insert(0, {
+                "id": log.id,
+                "title": log.ticket_text[:80],
+                "status": log.status,
+                "priority": log.priority,
+                "team": log.assigned_team,
+                "user": log.user.username if log.user else "Anonymous",
+                "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
+                "date": log.created_at.strftime('%b %d'),
+                "is_focus": True
+            })
+        except: pass
+    
+    # Sort: Focus always first
+    final_tickets.sort(key=lambda x: x['is_focus'], reverse=True)
+    context['bug_tickets'] = final_tickets
     
     # --- SYSTEM VELOCITY LOGIC ---
     now = timezone.now()
@@ -86,7 +149,7 @@ def dashboard(request):
     # Team Loads for the "Universal Truth" view
     from django.db.models import Count
     team_loads = SupportCase.objects.values('assigned_team').annotate(count=Count('assigned_team'))
-    context['team_loads'] = {item['assigned_team']: item['count'] for item in team_loads}
+    context['team_loads'] = {item['assigned_team'].replace(' ', '_'): item['count'] for item in team_loads}
     
     # --- SYSTEM METRICS ---
     total_cases = SupportCase.objects.count()
@@ -109,15 +172,27 @@ def dashboard(request):
         for log in recent_logs
     ]
     
-    # Dynamic Logistics Mapping (Donut Chart Metaphor)
+    # Dynamic Visualization (Professional Pastel Palette)
+    # Mapping Classification to High-Contrast Pastel Tones
     COLOR_MAP = {
-        'Technical Discrepancy': '#ffffff',
-        'Account/Billing': '#94a3b8',
-        'Operational Feedback': '#475569',
-        'Inquiry (Deflected)': '#1e293b'
+        'Technical Discrepancy': '#72A0C1', # Air Force Blue
+        'Operational Feedback':  '#FFCCB3', # Peach
+        'Account/Billing':       '#A2D1A9', # Pale Emerald
+        'Inquiry (Deflected)':   '#D3D3D3'  # Light Grey
     }
     
-    distributions = SupportCase.objects.values('classification').annotate(count=Count('classification'))
+    # Node-Specific Chart Colors (Overriding classification colors if we want team-based chart)
+    # The user asked for the circle segments to calculate size based on team percentages.
+    # So we should group by assigned_team for the chart.
+    
+    # High-Contrast Node Colors for Chart Differentiation
+    TEAM_COLOR_MAP = {
+        'Systems Engine':       '#72A0C1', # Soft Blue
+        'Creative Architecture': '#FFCCB3', # Pastel Peach
+        'Neural Insights':       '#A2D1A9'  # Pale Emerald
+    }
+    
+    distributions = SupportCase.objects.values('assigned_team').annotate(count=Count('assigned_team'))
     
     distribution_list = []
     chart_labels = []
@@ -126,19 +201,19 @@ def dashboard(request):
     
     if distributions:
         for dist in distributions:
-            label = dist['classification']
+            label = dist['assigned_team']
             count = dist['count']
-            color = COLOR_MAP.get(label, '#8b949e')
+            color = TEAM_COLOR_MAP.get(label, '#B2BABB')
             
             distribution_list.append({'label': label, 'count': count, 'color': color})
             chart_labels.append(label)
             chart_data.append(count)
             chart_colors.append(color)
     else:
-        distribution_list.append({'label': 'No Data', 'count': 0, 'color': '#8b949e'})
-        chart_labels.append('No Data')
+        distribution_list.append({'label': 'Systems Engine', 'count': 0, 'color': '#B6D0E2'})
+        chart_labels.append('Systems Engine')
         chart_data.append(1)
-        chart_colors.append('#8b949e')
+        chart_colors.append('#B6D0E2')
             
     context['distribution_list'] = distribution_list
     context['chart_labels'] = chart_labels
@@ -283,6 +358,15 @@ def team_view(request, team_name):
     # Global visibility: Allow seeing other teams if needed, but primary focus here
     cases = SupportCase.objects.filter(assigned_team=team_name).order_by('-priority', '-created_at')
     context['team_tickets'] = cases
+    
+    # Specialist Focus (Highlight Metadata)
+    highlight_id = request.GET.get('focus')
+    if highlight_id:
+        try:
+            focus_ticket = SupportCase.objects.get(id=highlight_id)
+            context['focus_ticket'] = focus_ticket
+        except SupportCase.DoesNotExist:
+            pass
     
     # Developer Accountability
     active_devs = User.objects.filter(is_staff=True).prefetch_related('assigned_cases')

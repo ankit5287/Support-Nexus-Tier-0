@@ -9,6 +9,13 @@ class CustomerPortalConfig(AppConfig):
     moderation_pipeline = None
     intent_pipeline = None
     
+    # Semantic Squad Contexts (for intent-based routing)
+    SQUAD_CONTEXTS = {
+        'Systems Engine': 'Infrastructure, backend servers, database performance, APIs, and low-level system integrity.',
+        'Creative Architecture': 'Visual design, user interface components, CSS animations, responsive layouts, and frontend aesthetics.',
+        'Neural Insights': 'Data analytics, predictive accuracy, machine learning logic, operational triage, and diagnostic integrity.'
+    }
+    
     def ready(self):
         # Prevent double-loading in Django's runserver reloading
         if os.environ.get('RUN_MAIN', None) != 'true':
@@ -48,11 +55,14 @@ class CustomerPortalConfig(AppConfig):
         # except Exception as e:
         #     print(f"[Nexus Quantum] WARNING: Moderation model error: {e}")
 
-        # 3. Load Intent Classification (Zero-Shot) — disabled to save memory
-        # Uncomment to enable real ML intent classification:
-        # try:
-        #     from transformers import pipeline
-        #     CustomerPortalConfig.intent_pipeline = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-        #     print("[Nexus Quantum] ✅ Intent Classifier loaded!")
-        # except Exception as e:
-        #     print(f"[Nexus Quantum] WARNING: Intent model error: {e}")
+        # 3. Load Intent Classification (Zero-Shot) — The Universal Fallback
+        try:
+            from transformers import pipeline
+            # Using a high-performance DistilBART for efficiency
+            CustomerPortalConfig.intent_pipeline = pipeline(
+                "zero-shot-classification", 
+                model="valhalla/distilbart-mnli-12-1"
+            )
+            print("[Nexus Quantum] ✅ Universal Zero-Shot Triage Online!")
+        except Exception as e:
+            print(f"[Nexus Quantum] WARNING: Zero-Shot initialization error: {e}")

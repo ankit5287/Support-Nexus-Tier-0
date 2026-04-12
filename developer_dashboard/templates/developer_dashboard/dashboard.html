@@ -62,8 +62,14 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 16px 0;
+            padding: 16px 20px;
             border-bottom: 1px solid var(--border-subtle);
+            transition: all 0.3s;
+        }
+        .ticket-strip.focus-highlight {
+            background: rgba(182, 208, 226, 0.08);
+            border-left: 3px solid var(--accent-periwinkle);
+            padding-left: 17px;
         }
         .ticket-info { display: flex; flex-direction: column; gap: 4px; }
         .ticket-id { font-size: 0.7rem; font-weight: 800; color: var(--text-3); }
@@ -74,7 +80,39 @@
         .focal-search {
             max-width: 800px;
             margin: 0 auto 64px auto;
+            position: relative;
         }
+
+        /* QAC Dropdown (Google Style) */
+        .qac-dropdown {
+            position: absolute;
+            top: 60px;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--r-sm);
+            z-index: 2000;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            display: none;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+        }
+        .qac-item {
+            padding: 12px 20px;
+            color: var(--text-2);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .qac-item:hover, .qac-item.active {
+            background: rgba(182, 208, 226, 0.1);
+            color: var(--accent-periwinkle);
+        }
+        .qac-item-icon { color: var(--text-3); }
     </style>
 </head>
 
@@ -109,15 +147,17 @@
 
             <!-- FOCAL SEMANTIC SEARCH -->
             <div class="focal-search">
-                <form method="GET" action="{% url 'dashboard' %}" class="nx-search-wrapper">
+                <form method="GET" id="search-form" action="{% url 'dashboard' %}" class="nx-search-wrapper" autocomplete="off">
                     <svg class="nx-search-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <input type="text" name="q" class="nx-input nx-search-input" placeholder="Initiate Global Semantic Search (e.g. 'SSO issues' or 'latency spikes')..." value="{{ request.GET.q }}">
+                    <input type="text" id="qac-input" name="q" class="nx-input nx-search-input" placeholder="Initiate Global Semantic Search (e.g. 'SSO issues' or 'latency spikes')..." value="{{ request.GET.q }}">
                     {% if active_filter %}
                     <input type="hidden" name="team" value="{{ active_filter }}">
                     {% endif %}
+                    
+                    <div id="qac-dropdown" class="qac-dropdown"></div>
                 </form>
             </div>
 
@@ -126,17 +166,17 @@
                 <a href="?team=Systems Engine" class="monitor-cell node-systems {% if active_filter == 'Systems Engine' %}active{% endif %}">
                     <div class="monitor-label">Systems Engine</div>
                     <div class="monitor-val">{{ team_loads.Systems_Engine|default:0 }}</div>
-                    <div class="monitor-stat" style="color:var(--accent-cyan);"><span class="dot-live" style="background:var(--accent-cyan); box-shadow:0 0 10px var(--accent-cyan);"></span> Node Active</div>
+                    <div class="monitor-stat"><span class="dot-live"></span> Node Active</div>
                 </a>
                 <a href="?team=Creative Architecture" class="monitor-cell node-creative {% if active_filter == 'Creative Architecture' %}active{% endif %}">
                     <div class="monitor-label">Creative Architecture</div>
                     <div class="monitor-val">{{ team_loads.Creative_Architecture|default:0 }}</div>
-                    <div class="monitor-stat" style="color:var(--accent-purple);"><span class="dot-live" style="background:var(--accent-purple); box-shadow:0 0 10px var(--accent-purple);"></span> Node Active</div>
+                    <div class="monitor-stat"><span class="dot-live"></span> Node Active</div>
                 </a>
                 <a href="?team=Neural Insights" class="monitor-cell node-neural {% if active_filter == 'Neural Insights' %}active{% endif %}">
                     <div class="monitor-label">Neural Insights</div>
                     <div class="monitor-val">{{ team_loads.Neural_Insights|default:0 }}</div>
-                    <div class="monitor-stat" style="color:var(--accent-lime);"><span class="dot-live" style="background:var(--accent-lime); box-shadow:0 0 10px var(--accent-lime);"></span> Node Active</div>
+                    <div class="monitor-stat"><span class="dot-live"></span> Node Active</div>
                 </a>
             </div>
 
@@ -153,13 +193,13 @@
                     <div id="ticket-stream" hx-get="/dev/kpi-update-htmx/" hx-trigger="statusUpdated from:body">
                         {% if bug_tickets %}
                         {% for t in bug_tickets %}
-                        <div class="ticket-strip">
+                        <div class="ticket-strip {% if t.is_focus %}focus-highlight{% endif %}">
                             <div class="ticket-info">
                                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
                                     <span class="ticket-id">LOG-{{ t.id }}</span>
                                     <span class="ticket-team">/ {{ t.team }}</span>
                                 </div>
-                                <span class="ticket-subject">{{ t.title }}</span>
+                                <span class="ticket-subject">{{ t.title|safe }}</span>
                                 <div style="font-size:0.7rem; color:var(--text-3); margin-top:4px;">
                                     Assigned: {{ t.assigned }} · Origin: {{ t.user }}
                                 </div>
@@ -179,7 +219,7 @@
                                     <option value="Resolved" {% if t.status == 'Resolved' %}selected{% endif %}>Resolved</option>
                                     <option value="Escalated" {% if t.status == 'Escalated' %}selected{% endif %}>Escalated</option>
                                 </select>
-                                <a href="{% url 'team_view' t.team %}" class="btn btn-ghost" style="padding:6px 14px; font-size:0.7rem;">Specialist View</a>
+                                <a href="{% url 'team_view' t.team %}?focus={{ t.id }}" class="btn btn-ghost" style="padding:6px 14px; font-size:0.7rem;">Specialist View</a>
                             </div>
                         </div>
                         {% endfor %}
@@ -230,7 +270,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.body.style.opacity = '1';
             
-            // --- NEON DONUT (DISTRIBUTION) ---
+            // --- PASTEL DONUT (DISTRIBUTION) ---
             const distCtx = document.getElementById('distributionChart');
             if (distCtx) {
                 const charts = new Chart(distCtx, {
@@ -239,12 +279,7 @@
                         labels: {{ chart_labels|safe }},
                         datasets: [{
                             data: {{ chart_data|safe }},
-                            backgroundColor: [
-                                '#18dcff', // Systems
-                                '#bd00ff', // Creative
-                                '#32ff7e', // Neural
-                                '#4a5568'  // Defaults
-                            ],
+                            backgroundColor: {{ chart_colors|safe }},
                             borderWidth: 0,
                             hoverOffset: 15,
                             borderRadius: 10,
@@ -309,6 +344,68 @@
                         },
                         responsive: true,
                         maintainAspectRatio: false
+                    }
+                });
+            }
+            // --- GOOGLE-STYLE AUTOCOMPLETE (QAC) ---
+            const qacInput = document.getElementById('qac-input');
+            const qacDropdown = document.getElementById('qac-dropdown');
+            const searchForm = document.getElementById('search-form');
+            let debounceTimer;
+
+            if (qacInput && qacDropdown) {
+                qacInput.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    const query = qacInput.value.trim();
+                    
+                    if (query.length < 2) {
+                        qacDropdown.style.display = 'none';
+                        return;
+                    }
+
+                    debounceTimer = setTimeout(async () => {
+                        try {
+                            const response = await fetch(`/dev/search/suggest/?q=${encodeURIComponent(query)}`);
+                            const data = await response.json();
+                            
+                            if (data.suggestions && data.suggestions.length > 0) {
+                                qacDropdown.innerHTML = data.suggestions.map(s => `
+                                    <div class="qac-item" data-val="${s.val}" data-id="${s.id || ''}">
+                                        <svg class="qac-item-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                        </svg>
+                                        ${s.val}
+                                    </div>
+                                `).join('');
+                                qacDropdown.style.display = 'block';
+                                
+                                // Click events
+                                document.querySelectorAll('.qac-item').forEach(item => {
+                                    item.addEventListener('click', () => {
+                                        const val = item.getAttribute('data-val');
+                                        const id = item.getAttribute('data-id');
+                                        qacInput.value = val;
+                                        qacDropdown.style.display = 'none';
+                                        
+                                        let finalUrl = `?q=${encodeURIComponent(val)}`;
+                                        if (id) finalUrl += `&focus=${id}`;
+                                        window.location.href = finalUrl;
+                                    });
+                                });
+                            } else {
+                                qacDropdown.style.display = 'none';
+                            }
+                        } catch (e) {
+                            console.error("QAC Error:", e);
+                        }
+                    }, 300);
+                });
+
+                // Close on click outside
+                document.addEventListener('click', (e) => {
+                    if (!qacInput.contains(e.target) && !qacDropdown.contains(e.target)) {
+                        qacDropdown.style.display = 'none';
                     }
                 });
             }

@@ -71,12 +71,12 @@ def index(request):
             
             context['urgency'] = urgency_level
             
-            # -- OPERATIONAL DOMAIN ASSIGNMENT --
-            squad = "Systems Engine" # Default
+            # -- OPERATIONAL DOMAIN ASSIGNMENT (HYBRID SEMANTIC/KEYWORD) --
+            squad = None
             creative_keywords = ["button", "css", "layout", "visual", "ui", "ux", "responsive", "frontend", "color", "header", "footer", "interface", "animation", "style", "display"]
             systems_keywords = ["api", "database", "server", "slow", "performance", "backend", "connection", "error 500", "db", "auth", "infrastructure", "latency", "system", "offline", "crash"]
             neural_keywords = ["logic", "algorithm", "prediction", "accuracy", "integrity", "triage", "standard", "diagnostic", "sync", "migration", "data flow", "report", "analysis", "audit", "metrics", "chart"]
-
+            
             input_lower = user_input.lower()
             if any(w in input_lower for w in neural_keywords):
                 squad = "Neural Insights"
@@ -84,6 +84,26 @@ def index(request):
                 squad = "Creative Architecture"
             elif any(w in input_lower for w in systems_keywords):
                 squad = "Systems Engine"
+            
+            # Semantic Routing Fallback
+            if not squad:
+                try:
+                    from developer_dashboard.semantic_search import SemanticSearchEngine
+                    import numpy as np
+                    engine = SemanticSearchEngine()
+                    input_vec = engine.model.encode([user_input])[0]
+                    # Logic: Compare input_vec with squad descriptions
+                    best_score = -1
+                    best_squad = "Systems Engine"
+                    for squad_name, desc in CustomerPortalConfig.SQUAD_CONTEXTS.items():
+                        desc_vec = engine.model.encode([desc])[0]
+                        similarity = np.dot(input_vec, desc_vec) / (np.linalg.norm(input_vec) * np.linalg.norm(desc_vec))
+                        if similarity > best_score:
+                            best_score = similarity
+                            best_squad = squad_name
+                    squad = best_squad
+                except:
+                    squad = "Systems Engine" # Hard Fallback
 
             # Enhanced Priority Scoring (P1/P2/P3)
             prio = "P3"
@@ -95,7 +115,13 @@ def index(request):
 
             tokenizer = CustomerPortalConfig.tokenizer
             model = CustomerPortalConfig.model
+            
+            classification_str = "Standard Inquiry"
+            certainty = 0.0
+            prediction_id = 99
+            triage_logic = "Specialized BERT"
 
+            # STEP 1: Specialized BERT
             if tokenizer and model:
                 import torch
                 inputs = tokenizer(user_input, return_tensors="pt", padding=True, truncation=True, max_length=128)
@@ -108,44 +134,36 @@ def index(request):
 
                 labels = {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
                 classification_str = labels.get(prediction_id, "Standard Inquiry")
-                
-                context['classification'] = {
-                    'label': classification_str,
-                    'certainty': round(certainty * 100, 2),
-                    'id': prediction_id
-                }
 
-                SupportCase.objects.create(
-                    user=request.user,
-                    ticket_text=user_input,
-                    classification=classification_str,
-                    category_code=prediction_id,
-                    system_certainty=round(certainty * 100, 2),
-                    assigned_team=squad,
-                    priority=prio,
-                    status="Open"
-                )
-                
-            else:
-                # Operational Fallback
-                labels = {0: "Technical Discrepancy", 1: "Account/Billing"}
-                classification_str = labels.get(0)
-                context['classification'] = {
-                    'label': classification_str,
-                    'certainty': 92.0,
-                    'id': 0
-                }
+            # STEP 2: Universal Zero-Shot Fallback (If BERT is uncertain)
+            if certainty < 0.70 and CustomerPortalConfig.intent_pipeline:
+                triage_labels = [
+                    "Technical Discrepancy", "Operational Feedback", "Account/Billing", 
+                    "Security/Compliance", "Feature Request", "Emergency Outage"
+                ]
+                z_result = CustomerPortalConfig.intent_pipeline(user_input, triage_labels)
+                classification_str = z_result['labels'][0]
+                certainty = z_result['scores'][0]
+                triage_logic = "Universal Zero-Shot"
+                prediction_id = 100 # Custom code for ZS
 
-                SupportCase.objects.create(
-                    user=request.user,
-                    ticket_text=user_input,
-                    classification=classification_str,
-                    category_code=0,
-                    system_certainty=92.0,
-                    assigned_team=squad,
-                    priority=prio,
-                    status="Open"
-                )
+            context['classification'] = {
+                'label': classification_str,
+                'certainty': round(certainty * 100, 2),
+                'logic': triage_logic
+            }
+
+            SupportCase.objects.create(
+                user=request.user,
+                ticket_text=user_input,
+                classification=classification_str,
+                category_code=prediction_id,
+                system_certainty=round(certainty * 100, 2),
+                assigned_team=squad,
+                priority=prio,
+                status="Open",
+                triage_metadata={'logic': triage_logic}
+            )
             
             latest_case = SupportCase.objects.filter(user=request.user).latest('id')
             context['success_msg'] = f"Operational Domain Analysis complete. Case #{latest_case.id} assigned to {squad}."
