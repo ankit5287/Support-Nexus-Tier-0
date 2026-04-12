@@ -34,11 +34,11 @@ class CustomerPortalConfig(AppConfig):
                 CustomerPortalConfig.model.eval()
                 print("[Nexus Quantum] ✅ BERT Ticket Classifier loaded into memory!")
             else:
-                print(f"[Nexus Quantum] ⚠️  BERT model not found at {MODEL_PATH}. Using simulation fallback.")
+                print("[Nexus Quantum] WARNING: BERT model not found at {MODEL_PATH}. Using simulation fallback.")
         except ImportError:
-            print("[Nexus Quantum] ⚠️  'transformers' or 'torch' not installed. BERT model unavailable.")
+            print("[Nexus Quantum] WARNING: 'transformers' or 'torch' not installed. BERT model unavailable.")
         except Exception as e:
-            print(f"[Nexus Quantum] ⚠️  Error loading BERT model: {e}")
+            print(f"[Nexus Quantum] WARNING: Error loading BERT model: {e}")
 
         # 2. Load Content Moderation (Toxic Comment Model) — disabled to save memory
         # Uncomment to enable real ML moderation:
@@ -47,7 +47,7 @@ class CustomerPortalConfig(AppConfig):
         #     CustomerPortalConfig.moderation_pipeline = pipeline("text-classification", model="martin-ha/toxic-comment-model")
         #     print("[Nexus Quantum] ✅ Content Moderation model loaded!")
         # except Exception as e:
-        #     print(f"[Nexus Quantum] ⚠️  Moderation model error: {e}")
+        #     print(f"[Nexus Quantum] WARNING: Moderation model error: {e}")
 
         # 3. Load Intent Classification (Zero-Shot) — disabled to save memory
         # Uncomment to enable real ML intent classification:
@@ -56,4 +56,4 @@ class CustomerPortalConfig(AppConfig):
         #     CustomerPortalConfig.intent_pipeline = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
         #     print("[Nexus Quantum] ✅ Intent Classifier loaded!")
         # except Exception as e:
-        #     print(f"[Nexus Quantum] ⚠️  Intent model error: {e}")
+        #     print(f"[Nexus Quantum] WARNING: Intent model error: {e}")

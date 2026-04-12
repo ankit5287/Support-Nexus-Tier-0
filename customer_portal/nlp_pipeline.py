@@ -67,7 +67,7 @@ try:
         nlp = spacy.load("en_core_web_sm")
         SPACY_AVAILABLE = True
     except OSError:
-        print("[NLP Pipeline] ⚠️  spaCy model 'en_core_web_sm' not found. Run 'python -m spacy download en_core_web_sm'")
+        print("[NLP Pipeline] WARNING: spaCy model 'en_core_web_sm' not found. Run 'python -m spacy download en_core_web_sm'")
 except ImportError:
     pass
 
@@ -97,7 +97,7 @@ class NLPClassifier:
         
         if SKLEARN_AVAILABLE:
             try:
-                print("[NLP Pipeline] 🛠 Training demonstration classifier on seed dataset...")
+                print("[NLP Pipeline] Training demonstration classifier on seed dataset...")
                 X = [extract_nouns(clean_text(text)) for text, label in SEED_DATA]
                 y = [label for text, label in SEED_DATA]
                 
@@ -107,9 +107,9 @@ class NLPClassifier:
                 self.model = LogisticRegression(max_iter=1000)
                 self.model.fit(tfidf_matrix, y)
                 self.is_trained = True
-                print("[NLP Pipeline] ✅ Financial routing model ready!")
+                print("[NLP Pipeline] SUCCESS: Financial routing model ready!")
             except Exception as e:
-                print(f"[NLP Pipeline] ❌ Error training demo model: {e}")
+                print(f"[NLP Pipeline] ERROR: Error training demo model: {e}")
         
         self._initialized = True
 
