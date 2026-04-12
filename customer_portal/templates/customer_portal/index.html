@@ -16,176 +16,116 @@
         <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot"></span></a>
+                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot">.</span>Global</a>
                 <div class="nx-nav-links">
-                    <a href="/">Home</a>
-                    {% if user.is_authenticated %}
-                    <a href="/dev/">Analysis Suite</a>
-                    <span style="color:var(--text-2);font-size:0.85rem;padding:7px 14px;">Hi, {{ user.username }}</span>
-                    <a href="/dev/logout/" class="nx-nav-cta">Sign Out</a>
-                    {% endif %}
+                    <a href="/">Operations Hub</a>
+                    <div class="dropdown">
+                        <a href="javascript:void(0)" class="btn btn-ghost" style="padding:8px 16px;">Access Portal</a>
+                        <div class="dropdown-content">
+                            <a href="/dev/">Developer Nexus</a>
+                            <a href="/">Customer Application Portal</a>
+                            {% if user.is_authenticated %}
+                            <hr style="border:0;border-top:1px solid var(--border-subtle);margin:4px 0;">
+                            <a href="/dev/logout/" style="color:var(--accent-rose);">Terminate Session</a>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <div class="container-sm section">
+        <div class="container-sm section anim-liquid-fade">
 
-            <!-- HEADER -->
-            <!-- FORM HEADER REMOVED AS REQUESTED -->
+            <div style="text-align:center;margin-bottom:64px;">
+                <h1 class="heading-md" style="margin-bottom:12px;">Nexus CRM Suite</h1>
+                <p class="body-sm">Direct Operational Command — Core Logic & Infrastructure</p>
+            </div>
 
             <!-- FORM -->
-            <div class="glass anim-fade-up delay-1" style="padding:40px;margin-bottom:24px;">
-
-                {% if moderation_flag %}
-                <div class="alert alert-error" style="margin-bottom:22px;">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
-                        viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    Please keep your message respectful so our team can help you.
-                </div>
-                {% endif %}
+            <div class="glass" style="padding:48px;margin-bottom:64px;">
 
                 {% if success_msg %}
-                <div class="alert alert-success" style="margin-bottom:22px;">
+                <div class="alert alert-success" style="margin-bottom:32px;">
                     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
                         viewBox="0 0 24 24">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                         <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
-                    Your request has been received. We'll be in touch shortly.
+                    <div>
+                        <strong>{{ success_msg }}</strong>
+                        <div style="font-size:0.75rem;margin-top:8px;opacity:0.8;">Intent Analytics: {{ intent|default:"Operational Update" }} identified. Transmitting to domain specialist.</div>
+                    </div>
                 </div>
                 {% endif %}
 
                 {% if error %}
-                <div class="alert alert-error" style="margin-bottom:22px;">{{ error }}</div>
+                <div class="alert alert-error" style="margin-bottom:32px;">{{ error }}</div>
                 {% endif %}
 
                 <form method="POST">
                     {% csrf_token %}
 
                     <div class="nx-field">
-                        <label class="nx-label">Describe your issue</label>
+                        <label class="nx-label">Operational Briefing</label>
                         <textarea name="ticket_text" id="ticket-area" class="nx-textarea"
-                            placeholder="Tell us what's happening — e.g. 'I can't log into my account' or 'I was charged incorrectly this month'…"
+                            placeholder="Detail the operational anomaly (e.g. 'Network cluster latency', 'Interface rendering discrepancy')…"
                             required>{% if user_input %}{{ user_input }}{% endif %}</textarea>
                     </div>
 
-                    <div id="mod-warning" class="alert alert-amber" style="display:none;margin-bottom:18px;">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
-                            viewBox="0 0 24 24">
-                            <path
-                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                        </svg>
-                        Please keep it respectful — our team will be happy to help!
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-full">
-                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"
-                            viewBox="0 0 24 24">
-                            <line x1="22" y1="2" x2="11" y2="13" />
-                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                        </svg>
-                        Send Request
+                    <button type="submit" class="btn btn-primary" style="width:100%;height:50px;font-weight:700;">
+                        Initialize Transmission
                     </button>
                 </form>
             </div>
 
-            <!-- HELPFUL ARTICLES -->
-            {% if kb_suggestion and ranked_articles %}
-            <div class="glass anim-fade-up delay-2" style="padding:28px;margin-bottom:24px;">
-                <div class="nx-card-header" style="margin-bottom:18px;">
-                    <div class="nx-card-title">Related Help Articles</div>
-                    <span class="badge badge-teal">{{ ranked_articles|length }} Found</span>
-                </div>
-                <p class="body-sm" style="margin-bottom:16px;">These articles may answer your question without needing
-                    to wait for a reply:</p>
-                <div style="display:flex;flex-direction:column;gap:10px;">
-                    {% for article in ranked_articles %}
-                    <div class="ticket-item" style="cursor:default;">
-                        <div
-                            style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:rgba(79,209,197,0.10);border:1px solid rgba(79,209,197,0.22);display:flex;align-items:center;justify-content:center;">
-                            <svg width="15" height="15" fill="none" stroke="var(--accent-teal)" stroke-width="2.2"
-                                viewBox="0 0 24 24">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                            </svg>
-                        </div>
-                        <div>
-                            <div class="ticket-title">{{ article.title }}</div>
-                            <div class="ticket-meta">{{ article.content|truncatechars:90 }}</div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
+            <!-- SYSTEM DIRECTIVE -->
+            <div style="text-align:center;padding:48px 0;opacity:0.6;">
+                <p class="body-sm">All transmissions undergo immediate Intent Classification and are routed to the relevant Nexus Logic Layer for resolution. High-priority anomalies are prioritized automatically.</p>
             </div>
-            {% endif %}
-
-            <!-- RECENT REQUESTS -->
-            {% if recent_tickets %}
-            <div class="glass anim-fade-up delay-3" style="padding:28px;">
-                <div class="nx-card-header" style="margin-bottom:18px;">
-                    <div class="nx-card-title">Your Recent Requests</div>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:10px;">
-                    {% for ticket in recent_tickets %}
-                    <div class="ticket-item" style="cursor:default;">
-                        <div style="flex-shrink:0;width:10px;height:10px;border-radius:50%;
-            {% if ticket.status_raw == 'resolved' %}background:var(--accent-green);box-shadow:0 0 6px var(--accent-green);
-            {% elif ticket.status_raw == 'in-progress' %}background:var(--accent-blue);box-shadow:0 0 6px var(--accent-blue);
-            {% else %}background:var(--accent-amber);box-shadow:0 0 6px var(--accent-amber);{% endif %}"></div>
-                        <div style="flex:1;min-width:0;">
-                            <div class="ticket-title">{{ ticket.title }}</div>
-                            <div class="ticket-meta"><span>Case {{ ticket.id }}</span> · <span>{{ ticket.date }}</span>
-                            </div>
-                        </div>
-                        <span
-                            style="font-size:0.75rem;font-weight:600;padding:4px 12px;border-radius:999px;flex-shrink:0;
-            {% if ticket.status_raw == 'resolved' %}background:rgba(104,211,145,0.12);color:var(--accent-green);border:1px solid rgba(104,211,145,0.3);
-            {% elif ticket.status_raw == 'in-progress' %}background:rgba(99,179,237,0.12);color:var(--accent-blue);border:1px solid rgba(99,179,237,0.3);
-            {% else %}background:rgba(246,173,85,0.12);color:var(--accent-amber);border:1px solid rgba(246,173,85,0.3);{% endif %}">
-                            {{ ticket.status }}
-                        </span>
-                    </div>
-                    {% endfor %}
-                </div>
-                <div class="glow-line"></div>
-                <p class="body-sm" style="text-align:center;">
-                    Need an update? Reply to the confirmation email or <a href="/"
-                        style="color:var(--accent-blue);text-decoration:none;">go back home</a>.
-                </p>
-            </div>
-            {% endif %}
-
-            {% if not recent_tickets and not success_msg %}
-            <div class="anim-fade-up delay-4" style="text-align:center;padding:28px 0;color:var(--text-3);">
-                <div style="font-size:2.2rem;margin-bottom:10px;">💬</div>
-                <p class="body-sm">No open requests yet. Use the form above to get in touch!</p>
-            </div>
-            {% endif %}
 
         </div>
 
-        <!-- FOOTER STRIP -->
-        <div style="border-top:1px solid var(--border-subtle);padding:32px 24px;text-align:center;">
-            <p class="body-sm">Support hours: Monday – Friday, 9 AM – 6 PM &nbsp;·&nbsp; Email: <span
-                    style="color:var(--accent-blue);">support@nexus.io</span></p>
+        <!-- MULTI-COLUMN FOOTER -->
+        <footer class="multi-footer">
+            <div class="footer-col">
+                <h4>Operations</h4>
+                <ul>
+                    <li><a href="#">System Integrity</a></li>
+                    <li><a href="#">Logic Routing</a></li>
+                    <li><a href="#">Infrastructure Ops</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Compliance</h4>
+                <ul>
+                    <li><a href="#">SLA Terms</a></li>
+                    <li><a href="#">Privacy Core</a></li>
+                    <li><a href="#">Global Standards</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <ul>
+                    <li><a href="/">Application Portal</a></li>
+                    <li><a href="/dev/">Developer Nexus</a></li>
+                    <li><a href="#">API Metadata</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Nexus Global</h4>
+                <p class="body-sm" style="color:var(--text-3); font-size: 0.75rem;">© 2026 Nexus Global Operations Hub. All rights reserved. Professional operational layer for high-end logic distribution.</p>
+            </div>
+        </footer>
+
+        <div class="footer-copy">
+            &copy; 2026 Nexus Global Operations Hub. All rights reserved.
         </div>
-        <footer class="nx-footer">&copy; 2026 Nexus</footer>
     </div>
 
     <script>
-        const area = document.getElementById('ticket-area');
-        const warn = document.getElementById('mod-warning');
-        const RUDE = ['idiot', 'stupid', 'dumb', 'hate', 'scam', 'moron'];
-        let t;
-        area.addEventListener('input', () => {
-            clearTimeout(t);
-            t = setTimeout(() => {
-                warn.style.display = RUDE.some(w => area.value.toLowerCase().includes(w)) ? 'flex' : 'none';
-            }, 400);
+        // Smooth transitions for liquid feel
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.opacity = '1';
         });
     </script>
 </body>

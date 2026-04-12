@@ -5,597 +5,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Developer Nexus — Support Nexus</title>
+    <title>Universal Command Center — Nexus Global</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        /* Dashboard-specific layout */
-        .dash-layout {
+        .command-layout {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 20px;
-            align-items: start;
+            grid-template-columns: 1fr 340px;
+            gap: 1px;
+            background: var(--border-subtle);
+            border: 1px solid var(--border-subtle);
+            margin-top: 40px;
         }
 
-        .dash-main {
+        .command-main, .command-sidebar {
+            background: #000;
+            padding: 40px;
+        }
+
+        .nexus-monitor {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border-subtle);
+            border: 1px solid var(--border-subtle);
+            margin-bottom: 40px;
+        }
+
+        .monitor-cell {
+            background: #000;
+            padding: 24px;
+            height: 140px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-        }
-
-        .dash-sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        @media(max-width:1000px) {
-            .dash-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Team zone tabs */
-        .zone-tabs {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .zone-tab {
-            padding: 7px 16px;
-            border-radius: 999px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            border: 1px solid var(--border-subtle);
-            background: var(--bg-surface);
-            color: var(--text-2);
-            cursor: pointer;
-            transition: all .2s;
-        }
-
-        .zone-tab.active {
-            background: rgba(99, 179, 237, 0.12);
-            border-color: rgba(99, 179, 237, 0.4);
-            color: var(--accent-blue);
-        }
-
-        .zone-tab:hover:not(.active) {
-            background: var(--bg-hover);
-            color: var(--text-1);
-        }
-
-        /* Zone content panels */
-        .zone-panel {
-            display: none;
-        }
-
-        .zone-panel.active {
-            display: block;
-        }
-
-        /* Ticket rows */
-        .tkt {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 14px;
-            border-radius: 12px;
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            transition: all .2s;
-            margin-bottom: 8px;
-        }
-
-        .tkt:hover {
-            background: var(--bg-hover);
-        }
-
-        .tkt-prio {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .tkt-body {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .tkt-title {
-            font-size: 0.88rem;
-            font-weight: 500;
-            white-space: nowrap;
+            justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            text-decoration: none;
+            position: relative;
             overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 35ch;
+        }
+        .monitor-cell:hover { background: rgba(255,255,255,0.02); }
+        .monitor-cell.active { background: rgba(59,130,246,0.05); border-bottom: 2px solid var(--accent-blue); }
+
+        .monitor-label { font-size: 0.7rem; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; }
+        .monitor-val { font-size: 1.5rem; font-weight: 700; color: #fff; }
+        
+        .velocity-container {
+            border: 1px solid var(--border-subtle);
+            background: #000;
+            padding: 24px;
+            margin-bottom: 40px;
         }
 
-        .tkt-meta {
-            font-size: 0.72rem;
-            color: var(--text-2);
-            margin-top: 3px;
+        .ticket-strip {
             display: flex;
-            gap: 8px;
-        }
-
-        .tkt-actions {
-            display: flex;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        /* Whisper note indicator */
-        .whisper-icon {
-            font-size: 0.7rem;
-            background: rgba(246, 173, 85, 0.12);
-            border: 1px solid rgba(246, 173, 85, 0.3);
-            color: var(--accent-amber);
-            padding: 2px 8px;
-            border-radius: 999px;
-            display: inline-flex;
             align-items: center;
-            gap: 4px;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .ticket-info { display: flex; flex-direction: column; gap: 4px; }
+        .ticket-id { font-size: 0.7rem; font-weight: 800; color: var(--text-3); }
+        .ticket-subject { font-size: 0.9rem; color: #fff; font-weight: 500; }
+        .ticket-team { font-size: 0.7rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; }
+
+        /* Focal Search Fix */
+        .focal-search {
+            max-width: 800px;
+            margin: 0 auto 64px auto;
         }
     </style>
 </head>
 
-<body>
-    <div class="mesh-bg"></div>
+<body style="opacity:0; transition: opacity 0.4s;" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
     <div class="page-wrapper">
 
         <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot"></span></a>
+                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot">.</span>Global</a>
                 <div class="nx-nav-links">
-                    <a href="/">Customer Portal</a>
-                    <a href="/dev/ide/">IDE</a>
-                    <a href="/dev/logic-lab/">Analysis Suite</a>
-                    <span style="color:var(--text-3);font-size:0.82rem;padding:0 8px;">{{ user.username }}</span>
-                    <a href="/dev/logout/" class="nx-nav-cta">Sign Out</a>
+                    <a href="{% url 'dashboard' %}">Common Hub</a>
+                    <div class="dropdown">
+                        <a href="javascript:void(0)" class="btn btn-ghost" style="padding:8px 16px;">Portal Switch</a>
+                        <div class="dropdown-content">
+                            <a href="{% url 'dashboard' %}">Common Dashboard</a>
+                            <a href="{% url 'index' %}">Customer Application Portal</a>
+                            <hr style="border:0;border-top:1px solid var(--border-subtle);margin:4px 0;">
+                            <a href="/dev/logout/" style="color:var(--accent-rose);">Sign Out</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <div class="container section-sm" style="padding-bottom:60px;">
+        <div class="container section anim-liquid-fade">
 
-            <!-- PAGE HEADER -->
-            <div style="margin-bottom:28px;" class="anim-fade-up">
-                <p class="sub-heading">Developer Nexus</p>
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-                    <h1 class="heading-md">Command Center</h1>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <span class="badge badge-green"><span class="dot-live"></span> All Systems Operational</span>
-                        <a href="/support/" class="btn btn-ghost btn-sm">Customer View</a>
+            <div style="text-align:center; margin-bottom:48px;">
+                <h1 class="heading-md" style="font-size:2.5rem; letter-spacing:-1px;">Universal Command Center</h1>
+                <p class="body-sm">Global System Lifecycle — Operational Integrity Monitoring</p>
+            </div>
+
+            <!-- FOCAL SEMANTIC SEARCH -->
+            <div class="focal-search">
+                <form method="GET" action="{% url 'dashboard' %}" class="nx-search-wrapper">
+                    <svg class="nx-search-icon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" name="q" class="nx-input nx-search-input" placeholder="Initiate Global Semantic Search (e.g. 'SSO issues' or 'latency spikes')..." value="{{ request.GET.q }}">
+                    {% if active_filter %}
+                    <input type="hidden" name="team" value="{{ active_filter }}">
+                    {% endif %}
+                </form>
+            </div>
+
+            <!-- OPERATIONAL NODES (The 3 Teams) -->
+            <div class="nexus-monitor">
+                <a href="?team=Systems Engine" class="monitor-cell node-systems {% if active_filter == 'Systems Engine' %}active{% endif %}">
+                    <div class="monitor-label">Systems Engine</div>
+                    <div class="monitor-val">{{ team_loads.Systems_Engine|default:0 }}</div>
+                    <div class="monitor-stat" style="color:var(--accent-cyan);"><span class="dot-live" style="background:var(--accent-cyan); box-shadow:0 0 10px var(--accent-cyan);"></span> Node Active</div>
+                </a>
+                <a href="?team=Creative Architecture" class="monitor-cell node-creative {% if active_filter == 'Creative Architecture' %}active{% endif %}">
+                    <div class="monitor-label">Creative Architecture</div>
+                    <div class="monitor-val">{{ team_loads.Creative_Architecture|default:0 }}</div>
+                    <div class="monitor-stat" style="color:var(--accent-purple);"><span class="dot-live" style="background:var(--accent-purple); box-shadow:0 0 10px var(--accent-purple);"></span> Node Active</div>
+                </a>
+                <a href="?team=Neural Insights" class="monitor-cell node-neural {% if active_filter == 'Neural Insights' %}active{% endif %}">
+                    <div class="monitor-label">Neural Insights</div>
+                    <div class="monitor-val">{{ team_loads.Neural_Insights|default:0 }}</div>
+                    <div class="monitor-stat" style="color:var(--accent-lime);"><span class="dot-live" style="background:var(--accent-lime); box-shadow:0 0 10px var(--accent-lime);"></span> Node Active</div>
+                </a>
+            </div>
+
+            <div class="command-layout">
+                <!-- MAIN COMMAND AREA -->
+                <div class="command-main">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
+                        <h2 class="kpi-label" style="margin:0;">Global Operational Stream {% if active_filter %}/ {{ active_filter }}{% endif %}</h2>
+                        {% if active_filter %}
+                        <a href="{% url 'dashboard' %}" style="font-size:0.7rem; color:var(--text-3); text-decoration:none;">Clear Filter [x]</a>
+                        {% endif %}
+                    </div>
+                    
+                    <div id="ticket-stream" hx-get="/dev/kpi-update-htmx/" hx-trigger="statusUpdated from:body">
+                        {% if bug_tickets %}
+                        {% for t in bug_tickets %}
+                        <div class="ticket-strip">
+                            <div class="ticket-info">
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+                                    <span class="ticket-id">LOG-{{ t.id }}</span>
+                                    <span class="ticket-team">/ {{ t.team }}</span>
+                                </div>
+                                <span class="ticket-subject">{{ t.title }}</span>
+                                <div style="font-size:0.7rem; color:var(--text-3); margin-top:4px;">
+                                    Assigned: {{ t.assigned }} · Origin: {{ t.user }}
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:16px; align-items:center;">
+                                <div id="status-badge-{{ t.id }}">
+                                    <span class="badge status-{{ t.status|lower|cut:' ' }}" style="padding:4px 10px;">{{ t.status }}</span>
+                                </div>
+                                <select class="status-select" 
+                                        name="status" 
+                                        hx-post="{% url 'update_status_htmx' t.id %}" 
+                                        hx-target="#status-badge-{{ t.id }}"
+                                        hx-swap="innerHTML">
+                                    <option value="">Move Status...</option>
+                                    <option value="Open" {% if t.status == 'Open' %}selected{% endif %}>Open</option>
+                                    <option value="In Progress" {% if t.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                    <option value="Resolved" {% if t.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                    <option value="Escalated" {% if t.status == 'Escalated' %}selected{% endif %}>Escalated</option>
+                                </select>
+                                <a href="{% url 'team_view' t.team %}" class="btn btn-ghost" style="padding:6px 14px; font-size:0.7rem;">Specialist View</a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <p class="body-sm" style="opacity:0.5; padding:40px 0; text-align:center;">No operational anomalies identified.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- SIDEBAR ANALYTICS -->
+                <div class="command-sidebar">
+                    <div style="margin-bottom:48px;">
+                        <h4 class="kpi-label">Distribution Circle</h4>
+                        <div style="padding:24px 0; position:relative;">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="velocity-container">
+                        <h4 class="kpi-label">System Velocity</h4>
+                        <div style="height:140px; margin-top:16px;">
+                            <canvas id="velocityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:48px;">
+                        <h4 class="kpi-label">Performance Core</h4>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Transmission Volume</div>
+                            <div id="kpi-total" class="kpi-value">{{ total_tickets }}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Validated Resolutions</div>
+                            <div id="kpi-verified" class="kpi-value">{{ verified_count }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- METRIC ROW -->
-            <div class="grid-4 anim-fade-up delay-1" style="margin-bottom:20px;">
-                <div class="metric-tile">
-                    <div class="metric-label">Total Tickets</div>
-                    <div class="metric-value">{{ total_tickets }}</div>
-                    <div class="metric-delta"><svg width="10" height="10" fill="none" stroke="currentColor"
-                            stroke-width="2.5" viewBox="0 0 24 24">
-                            <polyline points="18 15 12 9 6 15" />
-                        </svg> All time</div>
-                </div>
-                <div class="metric-tile">
-                    <div class="metric-label">Operational Review</div>
-                    <div class="metric-value">{{ verified_count }}</div>
-                    <div class="metric-delta" style="color:var(--accent-blue);">Reviewed</div>
-                </div>
-                <div class="metric-tile">
-                    <div class="metric-label">Pending Review</div>
-                    <div class="metric-value" style="color:var(--accent-amber);">{{ unverified_count }}</div>
-                    <div class="metric-delta" style="color:var(--accent-amber);">Needs attention</div>
-                </div>
-                <div class="metric-tile">
-                    <div class="metric-label">Active Teams</div>
-                    <div class="metric-value" style="color:var(--accent-teal);">4</div>
-                    <div class="metric-delta" style="color:var(--accent-teal);">Online now</div>
-                </div>
-            </div>
+        </div>
 
-            <!-- MAIN LAYOUT -->
-            <div class="dash-layout anim-fade-up delay-2">
-
-                <!-- LEFT: MAIN CONTENT -->
-                <div class="dash-main">
-
-                    <!-- MULTI-TEAM ZONE TABS -->
-                    <div class="nx-card">
-                        <div class="nx-card-header">
-                            <div class="nx-card-title">Team Zones</div>
-                            <span class="badge badge-violet">Nexus Routing Active</span>
-                        </div>
-                        <div class="zone-tabs" style="margin-bottom:20px;">
-                            <button class="zone-tab active" onclick="switchZone('backend',this)">Backend</button>
-                            <button class="zone-tab" onclick="switchZone('frontend',this)">Frontend</button>
-                            <button class="zone-tab" onclick="switchZone('systems-logic',this)">Systems Logic</button>
-                            <button class="zone-tab" onclick="switchZone('infra',this)">Infrastructure</button>
-                            <button class="zone-tab" onclick="switchZone('triage',this)"
-                                style="color:var(--accent-amber);border-color:rgba(246,173,85,0.3);">Triage
-                                Pool</button>
-                        </div>
-
-                        <!-- BACKEND ZONE -->
-                        <div id="zone-backend" class="zone-panel active">
-                            {% if bug_tickets %}
-                            {% for t in bug_tickets %}
-                            <div class="tkt">
-                                <div class="tkt-prio"
-                                    style="background:{% if t.priority == 'P1' %}var(--accent-rose);box-shadow:0 0 8px var(--accent-rose);{% elif t.priority == 'P2' %}var(--accent-amber);{% else %}var(--accent-green);{% endif %}">
-                                </div>
-                                <div class="tkt-body">
-                                    <div class="tkt-title">{{ t.title }}</div>
-                                    <div class="tkt-meta">
-                                        <span>#{{ t.id }}</span> · <span>{{ t.date }}</span> · <span>{{ t.user }}</span>
-                                        <span
-                                            class="badge {% if t.priority == 'P1' %}badge-rose{% elif t.priority == 'P2' %}badge-amber{% else %}badge-green{% endif %}"
-                                            style="padding:1px 8px;font-size:0.65rem;font-weight:700;">{{ t.priority }}</span>
-                                    </div>
-                                </div>
-                                <div class="tkt-actions">
-                                    {% if t.status == 'Open' %}
-                                    <a href="{% url 'update_status' t.id 'In Progress' %}" class="btn btn-ghost btn-sm" style="color:var(--accent-amber);">Investigate</a>
-                                    {% elif t.status == 'In Progress' %}
-                                    <a href="{% url 'update_status' t.id 'Resolved' %}" class="btn btn-ghost btn-sm" style="color:var(--accent-teal);">Resolve</a>
-                                    {% endif %}
-                                    <button class="btn btn-ghost btn-sm" onclick="openWhisper({{ t.id }})">Notes</button>
-                                </div>
-                            </div>
-                            {% endfor %}
-                            {% else %}
-                            <div style="text-align:center;padding:32px;color:var(--text-3);">
-                                <div style="font-size:2rem;margin-bottom:10px;">✓</div>
-                                <div>No open tickets for this team</div>
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- FRONTEND ZONE -->
-                        <div id="zone-frontend" class="zone-panel">
-                            <div style="text-align:center;padding:32px;color:var(--text-3);">
-                                <div style="font-size:1.8rem;margin-bottom:10px;">🖥️</div>
-                                <div>Frontend Team · No open tickets</div>
-                            </div>
-                        </div>
-
-                        <!-- SYSTEMS LOGIC ZONE -->
-                        <div id="zone-systems-logic" class="zone-panel">
-                            <div style="text-align:center;padding:32px;color:var(--text-3);">
-                                <div style="font-size:1.8rem;margin-bottom:10px;">🧠</div>
-                                <div>Systems Logic · Analysis in progress</div>
-                            </div>
-                        </div>
-
-                        <!-- INFRA ZONE -->
-                        <div id="zone-infra" class="zone-panel">
-                            <div style="text-align:center;padding:32px;color:var(--text-3);">
-                                <div style="font-size:1.8rem;margin-bottom:10px;">⚙️</div>
-                                <div>Infrastructure Team · All services nominal</div>
-                            </div>
-                        </div>
-
-                        <!-- TRIAGE POOL -->
-                        <div id="zone-triage" class="zone-panel">
-                            <div class="alert alert-amber" style="margin-bottom:16px;">Cases pending verification land here
-                                for operational review before routing.</div>
-                            <div style="text-align:center;padding:24px;color:var(--text-3);">No tickets in triage pool
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- WHISPER NOTES / CHAT PANEL -->
-                    <div class="nx-card" id="whisper-panel">
-                        <div class="nx-card-header">
-                            <div>
-                                <div class="nx-card-title">Collaboration Channel</div>
-                                <div style="font-size:0.75rem;color:var(--text-2);margin-top:3px;">Ticket <span
-                                        id="whisper-ticket-id">#—</span></div>
-                            </div>
-                            <div style="display:flex;gap:8px;">
-                                <span class="badge badge-blue">Public</span>
-                                <span class="whisper-icon">🔒 Whisper</span>
-                            </div>
-                        </div>
-
-                        <div class="bubble-wrap" id="chat-bubbles"
-                            style="margin-bottom:18px;max-height:260px;overflow-y:auto;padding-right:4px;">
-                            <div class="bubble bubble-public">
-                                <strong
-                                    style="font-size:0.75rem;color:var(--accent-blue);display:block;margin-bottom:4px;">Customer</strong>
-                                The app crashes every time I try to send a message.
-                                <div class="bubble-meta">10:24 AM · Public</div>
-                            </div>
-                            <div class="bubble bubble-whisper">
-                                <strong style="font-size:0.75rem;display:block;margin-bottom:4px;">🔒 john_dev</strong>
-                                This is likely the WebSocket race condition from last sprint. Assigning to Backend.
-                                <div class="bubble-meta" style="color:rgba(246,173,85,0.6);">10:26 AM · Internal Only
-                                </div>
-                            </div>
-                            <div class="bubble bubble-public bubble-public-out">
-                                <strong
-                                    style="font-size:0.75rem;color:var(--accent-blue);display:block;margin-bottom:4px;">Support
-                                    Agent</strong>
-                                We've identified the issue and the team is investigating. ETA 2 hours.
-                                <div class="bubble-meta" style="justify-content:flex-end;">10:30 AM · Public</div>
-                            </div>
-                        </div>
-
-                        <div style="display:flex;gap:10px;align-items:flex-end;">
-                            <div style="flex:1;">
-                                <input type="text" id="chat-input" class="nx-input" placeholder="Type a reply…"
-                                    style="border-radius:999px;padding:11px 18px;">
-                            </div>
-                            <div style="display:flex;gap:6px;">
-                                <button class="btn btn-ghost btn-sm" onclick="sendMsg(false)" title="Public reply"
-                                    style="border-radius:999px;">Send</button>
-                                <button class="btn btn-whisper btn-sm" onclick="sendMsg(true)"
-                                    title="Internal whisper note" style="border-radius:999px;">🔒 Whisper</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CODE REVIEW -->
-                    <div class="nx-card">
-                        <div class="nx-card-header">
-                            <div class="nx-card-title">Automated Logic Validator</div>
-                            <span class="badge badge-violet">Powered by Nexus Systems Logic</span>
-                        </div>
-
-                        {% if error %}<div class="alert alert-error" style="margin-bottom:16px;">{{ error }}</div>{% endif %}
-                        {% if success_msg %}<div class="alert alert-success" style="margin-bottom:16px;">{{ success_msg }}</div>{% endif %}
-
-                        <form method="POST">
-                            {% csrf_token %}
-                            <div class="nx-field">
-                                <label class="nx-label">GitHub Pull Request URL</label>
-                                <input type="text" name="github_pr_url" class="nx-input"
-                                    placeholder="https://github.com/owner/repo/pull/42"
-                                    value="{{ github_url|default:'' }}">
-                            </div>
-                            <div class="nx-field" style="margin-top:14px;">
-                                <label class="nx-label">Or paste code snippet</label>
-                                <textarea name="code_snippet" class="nx-textarea"
-                                    placeholder="def classify_ticket(text): …">{{ submitted_code|default:'' }}</textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
-                                    viewBox="0 0 24 24">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="12" y1="8" x2="12" y2="13" />
-                                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                                </svg>
-                                Review with Systems Logic
-                            </button>
-                        </form>
-
-                        {% if llm_feedback %}
-                        <div style="margin-top:22px;">
-                            <p class="sub-heading" style="margin-bottom:12px;">Analytic Findings</p>
-                            {% for line in llm_feedback %}
-                            {% if line %}<div class="alert alert-info" style="margin-bottom:8px;padding:10px 14px;">{{
-                                line }}</div>{% endif %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
-                        {% if github_pr_info %}
-                        <div class="glass-green" style="padding:14px 18px;margin-top:16px;">
-                            <div style="font-size:0.8rem;font-weight:600;color:var(--accent-green);margin-bottom:4px;">
-                                GitHub PR Fetched</div>
-                            <div style="font-size:0.88rem;">{{ github_pr_info.title }} &nbsp;·&nbsp; <span
-                                    style="color:var(--text-2);">by {{ github_pr_info.author }}</span></div>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                </div><!-- / dash-main -->
-
-                <!-- RIGHT: SIDEBAR -->
-                <div class="dash-sidebar">
-
-                    <!-- ANALYTICS CHART -->
-                    <div class="nx-card">
-                        <div class="nx-card-header">
-                            <div class="nx-card-title">Ticket Distribution</div>
-                        </div>
-                        <canvas id="distributionChart" style="max-height:200px;"></canvas>
-                        <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
-                            {% for d in distribution_list %}
-                            <div
-                                style="display:flex;align-items:center;justify-content:space-between;font-size:0.8rem;">
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <span
-                                        style="width:10px;height:10px;border-radius:50%;display:inline-block;background:{{ d.color }};"></span>
-                                    {{ d.label }}
-                                </div>
-                                <strong>{{ d.count }}</strong>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- TEAM LOAD MONITOR -->
-                    <div class="nx-card">
-                        <div class="nx-card-header">
-                            <div class="nx-card-title">Team Load Monitor</div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:10px;">
-                            {% with teams="Backend,Frontend,Intelligent Triage,Infrastructure" %}
-                            <div class="team-zone-bar">
-                                <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Backend</span>
-                                <div class="load-bar-bg" style="flex:1;">
-                                    <div class="load-bar-fill"
-                                        style="width:{% if bug_tickets %}{{ bug_tickets|length|floatformat:0 }}0{% else %}15{% endif %}%;">
-                                    </div>
-                                </div>
-                                <span class="badge badge-amber" style="padding:2px 8px;font-size:0.65rem;">{{ bug_tickets|length }} open</span>
-                            </div>
-                            <div class="team-zone-bar">
-                                <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Frontend</span>
-                                <div class="load-bar-bg" style="flex:1;">
-                                    <div class="load-bar-fill" style="width:20%;"></div>
-                                </div>
-                                <span class="badge badge-green" style="padding:2px 8px;font-size:0.65rem;">2 open</span>
-                            </div>
-                            <div class="team-zone-bar">
-                                <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Intelligent Triage</span>
-                                <div class="load-bar-bg" style="flex:1;">
-                                    <div class="load-bar-fill"
-                                        style="width:10%;background:var(--accent-violet);">
-                                    </div>
-                                </div>
-                                <span class="badge badge-teal" style="padding:2px 8px;font-size:0.65rem;">1 open</span>
-                            </div>
-                            <div class="team-zone-bar">
-                                <span style="font-size:0.82rem;font-weight:500;min-width:100px;">Infra</span>
-                                <div class="load-bar-bg" style="flex:1;">
-                                    <div class="load-bar-fill"
-                                        style="width:5%;background:var(--accent-green);">
-                                    </div>
-                                </div>
-                                <span class="badge badge-green" style="padding:2px 8px;font-size:0.65rem;">0 open</span>
-                            </div>
-                            {% endwith %}
-                        </div>
-                    </div>
-
-                    <!-- RECENT ACTIVITY -->
-                    <div class="nx-card">
-                        <div class="nx-card-header">
-                            <div class="nx-card-title">Recent System Activity</div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:8px;">
-                            {% for log in recent_activity %}
-                            <div
-                                style="padding:10px 12px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border-subtle);">
-                                <div
-                                    style="font-size:0.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:22ch;">
-                                    {{ log.text }}</div>
-                                <div
-                                    style="font-size:0.7rem;color:var(--text-2);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;">
-                                    <span>{{ log.label }}</span> · <span>{{ log.certainty }}% certainty</span> · <span>{{ log.time }}</span>
-                                </div>
-                            </div>
-                            {% empty %}
-                            <div style="text-align:center;padding:20px;color:var(--text-3);font-size:0.85rem;">No
-                                activity yet</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <!-- QUICK TOOLS -->
-                    <div class="nx-card">
-                        <div class="nx-card-header">
-                            <div class="nx-card-title">Quick Tools</div>
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:8px;">
-                            <a href="/dev/ide/" class="btn btn-ghost btn-sm btn-full"
-                                style="justify-content:flex-start;gap:10px;border-radius:10px;">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <polyline points="16 18 22 12 16 6" />
-                                    <polyline points="8 6 2 12 8 18" />
-                                </svg>
-                                Operational Logic Studio (IDE)
-                            </a>
-                            <a href="/dev/logic-lab/" class="btn btn-ghost btn-sm btn-full"
-                                style="justify-content:flex-start;gap:10px;border-radius:10px;">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path
-                                        d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
-                                </svg>
-                                Strategic Comparison Analysis Suite
-                            </a>
-                            <a href="/api/v1/classify-ticket/" class="btn btn-ghost btn-sm btn-full"
-                                style="justify-content:flex-start;gap:10px;border-radius:10px;">
-                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
-                                    viewBox="0 0 24 24">
-                                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                                </svg>
-                                Classification API
-                            </a>
-                        </div>
-                    </div>
-
-                </div><!-- / dash-sidebar -->
-            </div><!-- / dash-layout -->
-        </div><!-- / container -->
-
-        <footer class="nx-footer">&copy; 2026 Nexus Global Operations Hub</footer>
-    </div><!-- / page-wrapper -->
+        <footer class="footer-copy">
+            &copy; 2026 Nexus Global Operations Hub · <span style="opacity:0.5;">Last Sync: {{ last_sync }}</span>
+        </footer>
+    </div>
 
     <script>
-        // ── CHART ──
-        const ctx = document.getElementById('distributionChart');
-        if (ctx) {
-            const labels = {{ chart_labels|safe }};
-        const data = {{ chart_data|safe }};
-        const colors = {{ chart_colors|safe }};
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels,
-                datasets: [{
-                    data,
-                    backgroundColor: colors.map(c => c + '33'),
-                    borderColor: colors,
-                    borderWidth: 2,
-                    hoverOffset: 6,
-                }]
-            },
-            options: {
-                cutout: '72%',
-                plugins: { legend: { display: false } },
-                responsive: true,
-                maintainAspectRatio: true,
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.opacity = '1';
+            
+            // --- NEON DONUT (DISTRIBUTION) ---
+            const distCtx = document.getElementById('distributionChart');
+            if (distCtx) {
+                const charts = new Chart(distCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: {{ chart_labels|safe }},
+                        datasets: [{
+                            data: {{ chart_data|safe }},
+                            backgroundColor: [
+                                '#18dcff', // Systems
+                                '#bd00ff', // Creative
+                                '#32ff7e', // Neural
+                                '#4a5568'  // Defaults
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 15,
+                            borderRadius: 10,
+                            spacing: 5
+                        }]
+                    },
+                    options: {
+                        cutout: '82%',
+                        plugins: { 
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                backgroundColor: '#000',
+                                titleColor: '#fff',
+                                bodyFont: { weight: '800' },
+                                padding: 12,
+                                displayColors: false
+                            }
+                        },
+                        responsive: true,
+                        onClick: (evt, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const label = charts.data.labels[index];
+                                window.location.href = "?team=" + encodeURIComponent(label);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- VELOCITY CHART (GLOWING LINE) ---
+            const velCtx = document.getElementById('velocityChart');
+            if (velCtx) {
+                const gradient = velCtx.getContext('2d').createLinearGradient(0, 0, 0, 140);
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+                gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+                new Chart(velCtx, {
+                    type: 'line',
+                    data: {
+                        labels: {{ velocity_labels|safe }},
+                        datasets: [{
+                            data: {{ velocity_data|safe }},
+                            borderColor: '#3b82f6',
+                            borderWidth: 3,
+                            fill: true,
+                            backgroundColor: gradient,
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#3b82f6',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: false },
+                            y: { display: false }
+                        },
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
             }
         });
-}
-
-        // ── ZONE TABS ──
-        function switchZone(zone, el) {
-            document.querySelectorAll('.zone-panel').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.zone-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById('zone-' + zone).classList.add('active');
-            el.classList.add('active');
-        }
-
-        // ── WHISPER NOTES ──
-        function openWhisper(id) {
-            document.getElementById('whisper-ticket-id').textContent = '#' + id;
-            document.getElementById('whisper-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function sendMsg(isWhisper) {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if (!text) return;
-
-            const bubbles = document.getElementById('chat-bubbles');
-            const div = document.createElement('div');
-            div.className = isWhisper ? 'bubble bubble-whisper anim-fade-up' : 'bubble bubble-public-out anim-fade-up';
-
-            const now = new Date();
-            const time = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
-
-            if (isWhisper) {
-                div.innerHTML = `<strong style="font-size:.75rem;display:block;margin-bottom:4px;">🔒 You (Internal)</strong>${text}<div class="bubble-meta" style="color:rgba(246,173,85,.6);">${time} · Internal Only</div>`;
-            } else {
-                div.innerHTML = `${text}<div class="bubble-meta" style="justify-content:flex-end;">${time} · Public</div>`;
-            }
-
-            bubbles.appendChild(div);
-            bubbles.scrollTop = bubbles.scrollHeight;
-            input.value = '';
-        }
     </script>
 </body>
 

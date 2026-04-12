@@ -5,221 +5,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Operational Logic Studio — Nexus</title>
+    <title>Logic Distribution Console — Nexus Global</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <style>
-        .ide-layout {
-            display: grid;
-            grid-template-columns: 1fr 360px;
-            gap: 20px;
-            align-items: start;
-        }
-
-        @media(max-width:960px) {
-            .ide-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .ide-editor {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.88rem;
-            line-height: 1.7;
-            color: #9fef9f;
-            background: rgba(0, 0, 0, 0.5);
+        .ide-console {
             border: 1px solid var(--border-subtle);
-            border-radius: var(--r-lg);
-            padding: 20px 22px;
+            background: #000;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 1px;
+            background: var(--border-subtle);
+        }
+        .console-main, .console-sidebar {
+            background: #000;
+            padding: 40px;
+        }
+        .editor-textarea {
             width: 100%;
-            min-height: 320px;
-            resize: vertical;
+            height: 400px;
+            background: #050505;
+            border: 1px solid var(--border-subtle);
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            padding: 24px;
             outline: none;
-            box-sizing: border-box;
-            transition: border-color .3s;
+            resize: vertical;
         }
-
-        .ide-editor:focus {
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.12);
-        }
-
-        .diff-line-add {
-            color: var(--accent-green);
-        }
-
-        .diff-line-del {
-            color: var(--accent-rose);
-            text-decoration: line-through;
-            opacity: .6;
+        .output-box {
+            background: #0a0a0a;
+            border: 1px solid var(--border-subtle);
+            padding: 16px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--accent-teal);
+            margin-top: 24px;
         }
     </style>
 </head>
 
-<body>
+<body style="opacity:0; transition: opacity 0.4s;">
     <div class="page-wrapper">
 
-        <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/dev/" class="nx-logo">Nexus<span class="nx-logo-dot"></span></a>
+                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot">.</span>Global</a>
                 <div class="nx-nav-links">
-                    <a href="/dev/">Dashboard</a>
-                    <a href="/dev/logic-lab/">Analysis Suite</a>
-                    <span style="color:var(--text-3);font-size:0.82rem;padding:0 8px;">{{ user.username }}</span>
-                    <a href="/dev/logout/" class="nx-nav-cta">Sign Out</a>
+                    <a href="/dev/">Command Center</a>
+                    <div class="dropdown">
+                        <a href="javascript:void(0)" class="btn btn-ghost" style="padding:8px 16px;">Console Switch</a>
+                        <div class="dropdown-content">
+                            <a href="/dev/">Operations Hub</a>
+                            <a href="/">Interface Portal</a>
+                            <hr style="border:0;border-top:1px solid var(--border-subtle);margin:4px 0;">
+                            <a href="/dev/logout/" style="color:var(--accent-rose);">Terminate</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <div class="container section-sm" style="padding-bottom:60px;">
-
-            <!-- HEADER -->
-            <div style="margin-bottom:28px;" class="anim-fade-up">
-                <p class="sub-heading">Developer Tools</p>
-                <h1 class="heading-md">Operational Logic Studio</h1>
+        <div class="container section anim-liquid-fade">
+            <div style="margin-bottom:48px;">
+                <h1 class="heading-md">Logic Console</h1>
+                <p class="body-sm">Prototype and validate operational logic layers.</p>
             </div>
 
-            <div class="ide-layout anim-fade-up delay-1">
-
-                <!-- LEFT: EDITOR -->
-                <div class="dash-main" style="display:flex;flex-direction:column;gap:16px;">
-
-                    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
-                    {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
-
-                    <!-- EDITOR ACTIONS -->
-                    <div class="nx-card" style="padding:20px;">
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
-                            <span class="badge badge-green"><span class="dot-live"></span> Editor Active</span>
-                            <span style="font-size:0.78rem;color:var(--text-2);">nexus_classifier.py</span>
+            <div class="ide-console">
+                <div class="console-main">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <textarea name="code" class="editor-textarea">{{ current_code }}</textarea>
+                        <input type="hidden" name="action" id="action-input" value="run">
+                        
+                        <div style="display:flex; gap:16px; margin-top:24px;">
+                            <button type="submit" class="btn btn-primary" onclick="document.getElementById('action-input').value='polish'">Standardize Logic</button>
+                            <button type="submit" class="btn btn-ghost" onclick="document.getElementById('action-input').value='run'">Execute Test</button>
                         </div>
-                        <form method="POST" id="ide-form">
-                            {% csrf_token %}
-                            <textarea name="code" id="code-editor" class="ide-editor">{{ current_code }}</textarea>
-                            <input type="hidden" name="action" id="action-input" value="run">
-                            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
-                                <button type="button" class="btn btn-primary btn-sm" onclick="submitAction('polish')">
-                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"
-                                        viewBox="0 0 24 24">
-                                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                                    </svg>
-                                    Optimize Logic
-                                </button>
-                                <button type="button" class="btn btn-ghost btn-sm" onclick="submitAction('run')">
-                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"
-                                        viewBox="0 0 24 24">
-                                        <polygon points="5 3 19 12 5 21 5 3" />
-                                    </svg>
-                                    Run Code
-                                </button>
-                                <button type="button" class="btn btn-ghost btn-sm" onclick="submitAction('merge')">
-                                    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"
-                                        viewBox="0 0 24 24">
-                                        <circle cx="18" cy="18" r="3" />
-                                        <circle cx="6" cy="6" r="3" />
-                                        <path d="M13 6h3a2 2 0 0 1 2 2v7" />
-                                        <line x1="6" y1="9" x2="6" y2="21" />
-                                    </svg>
-                                    Merge Diff
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+                    </form>
 
-                    <!-- RUN OUTPUT -->
                     {% if run_output %}
-                    <div class="nx-card" style="padding:20px;">
-                        <p class="sub-heading" style="margin-bottom:12px;">Execution Output</p>
-                        <pre class="code-block" style="color:var(--accent-teal);margin:0;">{{ run_output }}</pre>
+                    <div class="output-box">
+                        <div style="font-size:0.6rem; font-weight:800; text-transform:uppercase; margin-bottom:8px; color:var(--text-3);">Terminal Output</div>
+                        {{ run_output|linebreaksbr }}
                     </div>
                     {% endif %}
-
-                    <!-- MERGE DIFF -->
-                    {% if is_merge_view and diff_output %}
-                    <div class="nx-card" style="padding:20px;">
-                        <p class="sub-heading" style="margin-bottom:12px;">Merge Diff vs main_branch.py</p>
-                        <div class="code-block" style="margin:0;">
-                            {% for line in diff_output.splitlines %}
-                            {% if line|slice:":1" == "+" %}<div class="diff-line-add">{{ line }}</div>
-                            {% elif line|slice:":1" == "-" %}<div class="diff-line-del">{{ line }}</div>
-                            {% else %}<div style="color:var(--text-2);">{{ line }}</div>{% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
-
                 </div>
 
-                <!-- RIGHT: SIDEBAR -->
-                <div style="display:flex;flex-direction:column;gap:16px;">
-
-                    <!-- REFINED CODE -->
-                    {% if refined_code %}
-                    <div class="nx-card" style="padding:20px;">
-                        <div class="nx-card-header" style="margin-bottom:14px;">
-                            <div class="nx-card-title">Refined Logic</div></div>
-                            <span class="badge badge-teal">Optimized</span>
-                        </div>
-                        <pre class="code-block" style="margin:0;">{{ refined_code }}</pre>
-                        <button class="btn btn-ghost btn-sm" style="margin-top:12px;width:100%;"
-                            onclick="document.getElementById('code-editor').value=`{{ refined_code|escapejs }}`">Apply
-                            to Editor</button>
-                    </div>
-                    {% endif %}
-
-                    {% if llm_feedback %}
-                    <div class="nx-card" style="padding:20px;">
-                        <p class="sub-heading" style="margin-bottom:12px;">System Feedback</p></p>
-                        {% for line in llm_feedback %}
-                        {% if line %}<div class="alert alert-info"
-                            style="margin-bottom:8px;padding:10px 14px;font-size:0.82rem;">{{ line }}</div>{% endif %}
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-
-                    <!-- QUICK TEMPLATES -->
-                    <div class="nx-card" style="padding:20px;">
-                        <p class="sub-heading" style="margin-bottom:14px;">Quick Templates</p>
-                        <div style="display:flex;flex-direction:column;gap:8px;">
-                            <button class="btn btn-ghost btn-sm" onclick="loadTemplate('classifier')"
-                                style="justify-content:flex-start;border-radius:10px;">Ticket Classifier</button>
-                            <button class="btn btn-ghost btn-sm" onclick="loadTemplate('sentiment')"
-                                style="justify-content:flex-start;border-radius:10px;">Sentiment Analyzer</button>
-                            <button class="btn btn-ghost btn-sm" onclick="loadTemplate('router')"
-                                style="justify-content:flex-start;border-radius:10px;">Team Router</button>
+                <div class="console-sidebar">
+                    <h4 class="kpi-label">Logic Integrity</h4>
+                    <p class="body-sm" style="font-size:0.75rem; margin-top:12px;">Ensure all business logic adheres to the Nexus Global distributed architecture standards.</p>
+                    
+                    <div style="margin-top:32px;">
+                        <h4 class="kpi-label">System Templates</h4>
+                        <div style="display:flex; flex-direction:column; gap:8px; margin-top:16px;">
+                            <a href="#" class="btn btn-ghost btn-sm" style="justify-content:flex-start;">Domain Router</a>
+                            <a href="#" class="btn btn-ghost btn-sm" style="justify-content:flex-start;">Auth Logic</a>
+                            <a href="#" class="btn btn-ghost btn-sm" style="justify-content:flex-start;">Latency Monitor</a>
                         </div>
                     </div>
-
-                    <!-- BACK -->
-                    <a href="/dev/" class="btn btn-ghost btn-full" style="border-radius:var(--r-md);">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"
-                            viewBox="0 0 24 24">
-                            <path d="M19 12H5M12 19l-7-7 7-7" />
-                        </svg>
-                        Back to Dashboard
-                    </a>
                 </div>
             </div>
         </div>
 
-        <footer class="nx-footer">&copy; 2026 Nexus Global Operations Hub</footer>
+        <footer class="footer-copy">
+            &copy; 2026 Nexus Global Operations Hub
+        </footer>
     </div>
 
     <script>
-        function submitAction(action) {
-            document.getElementById('action-input').value = action;
-            document.getElementById('ide-form').submit();
-        }
-
-        const TEMPLATES = {
-            classifier: `def classify_ticket(text):\n    """Enhanced operational classifier."""\n    text = text.lower()\n    if any(w in text for w in ['crash', 'error', 'broken']):\n        return 'Technical Discrepancy'\n    if any(w in text for w in ['bill', 'charge', 'invoice']):\n        return 'Account/Billing'\n    return 'General Inquiry'\n\n# Test\nprint(classify_ticket("The production system is down"))`,
-            sentiment: `def analyze_sentiment(text):\n    """Keyword-based sentiment analysis."""\n    negative = ['angry', 'frustrated', 'terrible', 'broken']\n    positive = ['great', 'love', 'amazing', 'thanks']\n    lc = text.lower()\n    if any(w in lc for w in negative):\n        return 'Negative', 0.85\n    if any(w in lc for w in positive):\n        return 'Positive', 0.90\n    return 'Neutral', 0.60\n\nsentiment, score = analyze_sentiment("This is terrible!")\nprint(f"Sentiment: {sentiment} ({score:.0%})")`,
-            router: `TEAM_MAP = {\n    'frontend': ['css', 'ui', 'button', 'layout'],\n    'backend': ['api', 'server', 'database', 'auth'],\n    'ml': ['model', 'logic', 'automation', 'prediction'],\n}\n\ndef route_ticket(text):\n    lc = text.lower()\n    for team, kws in TEAM_MAP.items():\n        if any(k in lc for k in kws):\n            return team.title()\n    return 'General'\n\nprint(route_ticket("The login API keeps returning 500"))`
-        };
-
-        function loadTemplate(name) {
-            document.getElementById('code-editor').value = TEMPLATES[name] || '';
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.opacity = '1';
+        });
     </script>
 </body>
 

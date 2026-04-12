@@ -24,11 +24,12 @@ class SupportCase(models.Model):
         ('Open', 'Open'),
         ('In Progress', 'In Progress'),
         ('Resolved', 'Resolved'),
+        ('Escalated', 'Escalated'),
     ]
     TEAM_CHOICES = [
-        ('Frontend', 'Frontend'),
-        ('Backend', 'Backend'),
-        ('Intelligent Triage', 'Intelligent Triage'),
+        ('Systems Engine', 'Systems Engine'),
+        ('Creative Architecture', 'Creative Architecture'),
+        ('Neural Insights', 'Neural Insights'),
     ]
     PRIORITY_CHOICES = [
         ('P3', 'P3 - Standard'),
@@ -37,7 +38,8 @@ class SupportCase(models.Model):
     ]
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Open')
-    assigned_team = models.CharField(max_length=25, choices=TEAM_CHOICES, default='Backend')
+    assigned_team = models.CharField(max_length=50, choices=TEAM_CHOICES, default='Infrastructure Ops')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_cases')
     priority = models.CharField(max_length=15, choices=PRIORITY_CHOICES, default='P3')
 
     created_at = models.DateTimeField(auto_now_add=True)

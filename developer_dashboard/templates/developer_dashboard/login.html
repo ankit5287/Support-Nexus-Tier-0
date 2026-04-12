@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise Access — Nexus</title>
+    <title>Authentication — Nexus Global</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <style>
         body {
@@ -13,56 +13,61 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: #050810;
+            background: #000;
         }
-        .auth-card {
+        .auth-container {
             width: 100%;
-            max-width: 440px;
-            padding: 48px 40px;
+            max-width: 400px;
+            padding: 40px;
+            border: 1px solid var(--border-subtle);
+            background: #000;
         }
     </style>
 </head>
 
-<body>
-    <div class="page-wrapper">
-        <div class="auth-card nx-card anim-fade-up">
-            <a href="/" class="nx-logo" style="display:block;margin-bottom:32px;">Nexus<span class="nx-logo-dot"></span></a>
-            <h1 class="heading-md" style="margin-bottom:8px;">Welcome back</h1>
-            <p class="body-sm" style="margin-bottom:36px;">Sign in to the Nexus Global Operations Hub.</p>
+<body style="opacity:0; transition: opacity 0.5s;">
+    <div class="auth-container anim-liquid-fade">
+        <a href="/" class="nx-logo" style="display:block;margin-bottom:48px;">Nexus<span class="nx-logo-dot">.</span>Global</a>
+        
+        <div style="margin-bottom:32px;">
+            <h1 class="heading-md" style="font-size:1.5rem; margin-bottom:8px;">Operational Gateway</h1>
+            <p class="body-sm">Identity Verification Required</p>
+        </div>
 
-            {% if error %}
-            <div class="alert alert-error" style="margin-bottom:24px;">
-                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                {{ error }}
+        {% if error %}
+        <div class="alert alert-error" style="margin-bottom:32px; border-radius:2px;">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'dev_login' %}">
+            {% csrf_token %}
+            <div class="nx-field">
+                <label class="nx-label">Identifier</label>
+                <input type="text" name="username" class="nx-input" placeholder="Nexus ID" required autocomplete="username">
             </div>
-            {% endif %}
-
-            <form method="POST" action="{% url 'dev_login' %}">
-                {% csrf_token %}
-                <div class="nx-field">
-                    <label class="nx-label">Username</label>
-                    <input type="text" name="username" class="nx-input" placeholder="Nexus ID" required autocomplete="username">
-                </div>
-                <div class="nx-field" style="margin-bottom:28px;">
-                    <label class="nx-label">Password</label>
-                    <input type="password" name="password" class="nx-input" placeholder="••••••••••" required
-                        autocomplete="current-password">
-                </div>
-                <button type="submit" class="btn btn-primary btn-full">Sign In</button>
-            </form>
-
-            <div class="nx-divider" style="margin:24px 0;"></div>
+            <div class="nx-field" style="margin-bottom:32px;">
+                <label class="nx-label">Credential</label>
+                <input type="password" name="password" class="nx-input" placeholder="••••••••" required autocomplete="current-password">
+            </div>
             
-            <div style="display:flex;justify-content:center;gap:20px;font-size:0.85rem;">
-                <a href="#" style="color:var(--text-3);text-decoration:none;">Forgot password?</a>
-                <a href="{% url 'dev_signup' %}" style="color:var(--accent-blue);text-decoration:none;">Create account →</a>
-            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; height:50px; font-weight:700;">
+                Authorize Session
+            </button>
+        </form>
+
+        <div style="margin-top:40px; text-align:center; border-top: 1px solid var(--border-subtle); padding-top:24px;">
+            <p class="body-sm">Unsecured Access Prohibited<br>
+            <a href="{% url 'dev_signup' %}" style="color:var(--accent-blue); text-decoration:none; display:inline-block; margin-top:12px;">Create Credentials</a>
+            </p>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.style.opacity = '1';
+        });
+    </script>
 </body>
 
 </html>

@@ -71,19 +71,19 @@ def index(request):
             
             context['urgency'] = urgency_level
             
-            # -- TRIAGE SQUAD ASSIGNMENT --
-            squad = "Backend" # Default
-            frontend_keywords = ["button", "css", "layout", "visual", "ui", "ux", "responsive", "frontend", "color", "header", "footer"]
-            backend_keywords = ["api", "database", "server", "slow", "performance", "backend", "connection", "error 500", "database", "db", "auth"]
-            triage_keywords = ["logic", "algorithm", "prediction", "accuracy", "integrity", "triage", "system", "diagnostic"]
+            # -- OPERATIONAL DOMAIN ASSIGNMENT --
+            squad = "Systems Engine" # Default
+            creative_keywords = ["button", "css", "layout", "visual", "ui", "ux", "responsive", "frontend", "color", "header", "footer", "interface", "animation", "style", "display"]
+            systems_keywords = ["api", "database", "server", "slow", "performance", "backend", "connection", "error 500", "db", "auth", "infrastructure", "latency", "system", "offline", "crash"]
+            neural_keywords = ["logic", "algorithm", "prediction", "accuracy", "integrity", "triage", "standard", "diagnostic", "sync", "migration", "data flow", "report", "analysis", "audit", "metrics", "chart"]
 
             input_lower = user_input.lower()
-            if any(w in input_lower for w in triage_keywords):
-                squad = "Intelligent Triage"
-            elif any(w in input_lower for w in frontend_keywords):
-                squad = "Frontend"
-            elif any(w in input_lower for w in backend_keywords):
-                squad = "Backend"
+            if any(w in input_lower for w in neural_keywords):
+                squad = "Neural Insights"
+            elif any(w in input_lower for w in creative_keywords):
+                squad = "Creative Architecture"
+            elif any(w in input_lower for w in systems_keywords):
+                squad = "Systems Engine"
 
             # Enhanced Priority Scoring (P1/P2/P3)
             prio = "P3"
@@ -147,9 +147,8 @@ def index(request):
                     status="Open"
                 )
             
-            context['recent_tickets'] = _get_user_tickets(request.user)
             latest_case = SupportCase.objects.filter(user=request.user).latest('id')
-            context['success_msg'] = f"Operational Case #{latest_case.id} successfully queued for the {squad} department."
+            context['success_msg'] = f"Operational Domain Analysis complete. Case #{latest_case.id} assigned to {squad}."
             
         else:
             context['error'] = "Description required for processing."

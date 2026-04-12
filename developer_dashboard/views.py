@@ -17,25 +17,76 @@ def staff_required(user):
 def dashboard(request):
     from customer_portal.models import SupportCase
     from django.db.models import Count
+    from django.utils import timezone
+    from datetime import timedelta
     
     context = {}
     
-    # --- OPERATIONAL CASE TRIAGE ---
-    user_squad = getattr(request.user, 'squad', 'Backend') 
+    # --- DYNAMIC FILTERING ---
+    active_team = request.GET.get('team', '')
+    context['active_filter'] = active_team
     
-    cases = SupportCase.objects.filter(assigned_team=user_squad, status='Open').order_by('-created_at')[:10]
-    context['bug_tickets'] = [
-        {
-            "id": log.id,
-            "title": log.ticket_text[:80],
-            "status": log.status,
-            "priority": log.priority,
-            "user": log.user.username if log.user else "Anonymous",
-            "date": log.created_at.strftime('%b %d, %H:%M') if log.created_at else "N/A"
-        }
-        for log in cases
-    ]
-    context['user_squad'] = user_squad
+    # Global Ticket Search (Semantic)
+    query = request.GET.get('q', '')
+    
+    cases_query = SupportCase.objects.all()
+    if active_team:
+        cases_query = cases_query.filter(assigned_team=active_team)
+    
+    if query:
+        from .semantic_search import semantic_ticket_query
+        search_results = semantic_ticket_query(query)
+        if active_team:
+            search_results = [r for r in search_results if r.assigned_team == active_team]
+        
+        context['bug_tickets'] = [
+            {
+                "id": log.id,
+                "title": log.ticket_text[:80],
+                "status": log.status,
+                "priority": log.priority,
+                "team": log.assigned_team,
+                "user": log.user.username if log.user else "Anonymous",
+                "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
+                "date": log.created_at.strftime('%b %d')
+            }
+            for log in search_results
+        ]
+        context['is_search'] = True
+    else:
+        cases = cases_query.order_by('-created_at')[:15]
+        context['bug_tickets'] = [
+            {
+                "id": log.id,
+                "title": log.ticket_text[:80],
+                "status": log.status,
+                "priority": log.priority,
+                "team": log.assigned_team,
+                "user": log.user.username if log.user else "Anonymous",
+                "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
+                "date": log.created_at.strftime('%b %d')
+            }
+            for log in cases
+        ]
+    
+    # --- SYSTEM VELOCITY LOGIC ---
+    now = timezone.now()
+    velocity_labels = []
+    velocity_data = []
+    for i in range(6, -1, -1):
+        day = now - timedelta(days=i)
+        count = SupportCase.objects.filter(status='Resolved', updated_at__date=day.date()).count()
+        velocity_labels.append(day.strftime('%b %d'))
+        velocity_data.append(count)
+    
+    context['velocity_labels'] = velocity_labels
+    context['velocity_data'] = velocity_data
+    context['last_sync'] = now.strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Team Loads for the "Universal Truth" view
+    from django.db.models import Count
+    team_loads = SupportCase.objects.values('assigned_team').annotate(count=Count('assigned_team'))
+    context['team_loads'] = {item['assigned_team']: item['count'] for item in team_loads}
     
     # --- SYSTEM METRICS ---
     total_cases = SupportCase.objects.count()
@@ -58,12 +109,12 @@ def dashboard(request):
         for log in recent_logs
     ]
     
-    # Dynamic Logistics Mapping
+    # Dynamic Logistics Mapping (Donut Chart Metaphor)
     COLOR_MAP = {
-        'Technical Discrepancy': '#f85149',
-        'Account/Billing': '#58a6ff',
-        'Operational Feedback': '#3fb950',
-        'Inquiry (Deflected)': '#a371f7'
+        'Technical Discrepancy': '#ffffff',
+        'Account/Billing': '#94a3b8',
+        'Operational Feedback': '#475569',
+        'Inquiry (Deflected)': '#1e293b'
     }
     
     distributions = SupportCase.objects.values('classification').annotate(count=Count('classification'))
@@ -218,55 +269,94 @@ def ide_view(request):
     return render(request, 'developer_dashboard/ide.html', context)
 
 
-@login_required(login_url='/dev/login/')
-@user_passes_test(staff_required, login_url='/')
-def logic_lab(request):
-    """Strategic Comparison Analysis Suite."""
-    from .models import StrategicComparison
-    context = {}
-    context['past_predictions'] = StrategicComparison.objects.filter(user=request.user).order_by('-created_at')[:5]
-    
-    if request.method == 'POST':
-        flow_a = request.POST.get('flow_a', '')
-        flow_b = request.POST.get('flow_b', '')
-        
-        if flow_a and flow_b:
-            api_key = os.environ.get("GEMINI_API_KEY", "")
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-pro-latest')
-                prompt = f"Analyze these two operational flows and recommend the superior strategy:\nFLOW A: {flow_a}\nFLOW B: {flow_b}\n\nProvide: Winner, Confidence, and Detailed Rationale."
-                response = model.generate_content(prompt)
-                result_text = response.text
-                context['prediction_result'] = result_text
-                
-                StrategicComparison.objects.create(
-                    user=request.user,
-                    strategy_a=flow_a,
-                    strategy_b=flow_b,
-                    comparison_result=result_text
-                )
-                context['past_predictions'] = StrategicComparison.objects.filter(user=request.user).order_by('-created_at')[:5]
-            except Exception as e:
-                context['error'] = f"Comparison Audit Failed: {str(e)}"
-                
-    return render(request, 'developer_dashboard/logic_lab.html', context)
+# DELETED: Strategic Comparison Analysis Suite
+
 
 
 @login_required(login_url='/dev/login/')
 @user_passes_test(staff_required, login_url='/')
-def update_status(request, ticket_id, new_status):
+def team_view(request, team_name):
+    """Domain-Specific Operational View."""
     from customer_portal.models import SupportCase
+    context = {'team_name': team_name}
+    
+    # Global visibility: Allow seeing other teams if needed, but primary focus here
+    cases = SupportCase.objects.filter(assigned_team=team_name).order_by('-priority', '-created_at')
+    context['team_tickets'] = cases
+    
+    # Developer Accountability
+    active_devs = User.objects.filter(is_staff=True).prefetch_related('assigned_cases')
+    context['accountability_list'] = [
+        {
+            'user': dev.username,
+            'current_task': dev.assigned_cases.filter(status='In Progress').first(),
+            'status': 'Processing' if dev.assigned_cases.filter(status='In Progress').exists() else 'Available'
+        }
+        for dev in active_devs
+    ]
+    
+    return render(request, 'developer_dashboard/team_view.html', context)
+
+
+@login_required(login_url='/dev/login/')
+@user_passes_test(staff_required, login_url='/')
+def transfer_ticket(request, ticket_id):
+    """One-click routing between domains."""
+    from customer_portal.models import SupportCase
+    if request.method == 'POST':
+        new_team = request.POST.get('target_team')
+        try:
+            case = SupportCase.objects.get(id=ticket_id)
+            if any(new_team == choice[0] for choice in SupportCase.TEAM_CHOICES):
+                case.assigned_team = new_team
+                case.save()
+        except SupportCase.DoesNotExist:
+            pass
+    return redirect('dashboard')
+
+
+@login_required(login_url='/dev/login/')
+@user_passes_test(staff_required, login_url='/')
+def update_status_htmx(request, ticket_id):
+    """HTMX endpoint for operational status changes."""
+    from customer_portal.models import SupportCase
+    from django.http import HttpResponse
+    from django.template.loader import render_to_string
+    
+    new_status = request.POST.get('status')
     try:
         case = SupportCase.objects.get(id=ticket_id)
-        if new_status in ['Open', 'In Progress', 'Resolved']:
+        if new_status in [s[0] for s in SupportCase.STATUS_CHOICES]:
             case.status = new_status
-            case.is_reviewed = True 
+            if new_status == 'In Progress' and not case.assigned_to:
+                case.assigned_to = request.user
+            case.is_reviewed = True
             case.save()
+            
+            # Return updated status badge
+            badge_html = f'<span class="badge status-{new_status.lower().replace(" ", "-")}" style="padding:4px 10px;">{new_status}</span>'
+            
+            # Response with HTMX Trigger to update KPI cards if needed
+            response = HttpResponse(badge_html)
+            response['HX-Trigger'] = 'statusUpdated'
+            return response
     except SupportCase.DoesNotExist:
         pass
-    return redirect('dashboard')
+    return HttpResponse(status=400)
+
+
+@login_required(login_url='/dev/login/')
+@user_passes_test(staff_required, login_url='/')
+def kpi_update_htmx(request):
+    """HTMX endpoint to refresh KPI values."""
+    from customer_portal.models import SupportCase
+    total_cases = SupportCase.objects.count()
+    verified_count = SupportCase.objects.filter(is_reviewed=True).count()
+    
+    return HttpResponse(f"""
+        <div id="kpi-total" hx-swap-oob="true" class="kpi-value">{total_cases}</div>
+        <div id="kpi-verified" hx-swap-oob="true" class="kpi-value">{verified_count}</div>
+    """)
 
 
 def login_view(request):
