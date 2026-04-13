@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contact Support — Nexus</title>
+    <title>Contact Support — Logic Stream</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
 </head>
 
@@ -16,13 +16,13 @@
         <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot">.</span>Global</a>
+                <a href="/" class="nx-logo">Logic Stream</a>
                 <div class="nx-nav-links">
                     <a href="/">Operations Hub</a>
                     <div class="dropdown">
                         <a href="javascript:void(0)" class="btn btn-ghost" style="padding:8px 16px;">Access Portal</a>
                         <div class="dropdown-content">
-                            <a href="/dev/">Developer Nexus</a>
+                            <a href="/dev/">Developer Logic Hub</a>
                             <a href="/">Customer Application Portal</a>
                             {% if user.is_authenticated %}
                             <hr style="border:0;border-top:1px solid var(--border-subtle);margin:4px 0;">
@@ -37,50 +37,51 @@
         <div class="container-sm section anim-liquid-fade">
 
             <div style="text-align:center;margin-bottom:64px;">
-                <h1 class="heading-md" style="margin-bottom:12px;">Nexus CRM Suite</h1>
-                <p class="body-sm">Direct Operational Command — Core Logic & Infrastructure</p>
+                <h1 class="heading-md" style="margin-bottom:12px; font-size:2.8rem; letter-spacing:-1px;">Logic Stream Suite</h1>
+                <p class="body-sm" style="letter-spacing:0.1em; opacity:0.8;">High-End Operational Command — Logic Distribution</p>
             </div>
 
-            <!-- FORM -->
-            <div class="glass" style="padding:48px;margin-bottom:64px;">
+            <!-- PRIMARY TRANSMISSION INTERFACE -->
+            <div class="glass" style="padding:56px; margin-bottom:64px; border:1px solid rgba(255,255,255,0.05);">
 
                 {% if success_msg %}
-                <div class="alert alert-success" style="margin-bottom:32px;">
-                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"
+                <div class="alert alert-success" style="margin-bottom:40px; background:rgba(16,185,129,0.05); border:1px solid var(--accent-sage);">
+                    <svg width="20" height="20" fill="none" stroke="var(--accent-sage)" stroke-width="2.5"
                         viewBox="0 0 24 24">
                         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                         <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                     <div>
-                        <strong>{{ success_msg }}</strong>
-                        <div style="font-size:0.75rem;margin-top:8px;opacity:0.8;">Intent Analytics: {{ intent|default:"Operational Update" }} identified. Transmitting to domain specialist.</div>
+                        <strong style="color:#fff; font-size:1rem;">{{ success_msg }}</strong>
+                        <div style="font-size:0.75rem;margin-top:10px;opacity:0.6; font-family:monospace;">LOG_STREAM_PROTOCOL: {{ intent|default:"Operational Update"|upper }} identified. Routing to specialist node.</div>
                     </div>
                 </div>
                 {% endif %}
 
                 {% if error %}
-                <div class="alert alert-error" style="margin-bottom:32px;">{{ error }}</div>
+                <div class="alert alert-error" style="margin-bottom:40px;">{{ error }}</div>
                 {% endif %}
 
                 <form method="POST">
                     {% csrf_token %}
 
                     <div class="nx-field">
-                        <label class="nx-label">Operational Briefing</label>
+                        <label class="nx-label" style="text-transform:uppercase; letter-spacing:0.1em; font-size:0.7rem; color:var(--text-3);">Operational Briefing Abstract</label>
                         <textarea name="ticket_text" id="ticket-area" class="nx-textarea"
-                            placeholder="Detail the operational anomaly (e.g. 'Network cluster latency', 'Interface rendering discrepancy')…"
+                            style="height:180px; font-size:1.1rem; line-height:1.6;"
+                            placeholder="Detail the CRM operational anomaly (e.g. 'Lead database sync timeout', 'API latency exceeding 500ms protocol', 'Mobile interface rendering discrepancy')…"
                             required>{% if user_input %}{{ user_input }}{% endif %}</textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="width:100%;height:50px;font-weight:700;">
-                        Initialize Transmission
+                    <button type="submit" class="btn btn-primary" style="width:100%; height:60px; font-weight:900; font-size:1rem; letter-spacing:0.1em; text-transform:uppercase;">
+                        Initialize Logic Transmission
                     </button>
                 </form>
             </div>
 
-            <!-- SYSTEM DIRECTIVE -->
-            <div style="text-align:center;padding:48px 0;opacity:0.6;">
-                <p class="body-sm">All transmissions undergo immediate Intent Classification and are routed to the relevant Nexus Logic Layer for resolution. High-priority anomalies are prioritized automatically.</p>
+            <!-- SYSTEM INTEGRITY DIRECTIVE -->
+            <div style="text-align:center; padding:64px 0; border-top:1px solid var(--border-subtle); opacity:0.6;">
+                <p class="body-sm" style="max-width:600px; margin:0 auto; line-height:1.8;">All transmissions undergo immediate Neural Intent Classification and are routed to the relevant Logic Stream Layer for resolution. High-priority anomalies are prioritized automatically based on operational entropy.</p>
             </div>
 
         </div>
@@ -100,25 +101,25 @@
                 <ul>
                     <li><a href="#">SLA Terms</a></li>
                     <li><a href="#">Privacy Core</a></li>
-                    <li><a href="#">Global Standards</a></li>
+                    <li><a href="#">System Standards</a></li>
                 </ul>
             </div>
             <div class="footer-col">
                 <h4>Support</h4>
                 <ul>
                     <li><a href="/">Application Portal</a></li>
-                    <li><a href="/dev/">Developer Nexus</a></li>
+                    <li><a href="/dev/">Developer Logic Stream</a></li>
                     <li><a href="#">API Metadata</a></li>
                 </ul>
             </div>
             <div class="footer-col">
-                <h4>Nexus Global</h4>
-                <p class="body-sm" style="color:var(--text-3); font-size: 0.75rem;">© 2026 Nexus Global Operations Hub. All rights reserved. Professional operational layer for high-end logic distribution.</p>
+                <h4>Logic Stream</h4>
+                <p class="body-sm" style="color:var(--text-3); font-size: 0.75rem;">© 2026 Logic Stream Operations Hub. All rights reserved. Professional operational layer for high-end logic distribution.</p>
             </div>
         </footer>
 
         <div class="footer-copy">
-            &copy; 2026 Nexus Global Operations Hub. All rights reserved.
+            &copy; 2026 Logic Stream Operations Hub. All rights reserved.
         </div>
     </div>
 

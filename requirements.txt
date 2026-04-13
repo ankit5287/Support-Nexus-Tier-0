@@ -12,3 +12,5 @@ spacy
 scikit-learn
 djangorestframework
 django-htmx
+gunicorn
+whitenoise

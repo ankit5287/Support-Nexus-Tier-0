@@ -41,6 +41,9 @@ class SupportCase(models.Model):
     assigned_team = models.CharField(max_length=50, choices=TEAM_CHOICES, default='Infrastructure Ops')
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_cases')
     priority = models.CharField(max_length=15, choices=PRIORITY_CHOICES, default='P3')
+    
+    # Store AI metadata for later audit (sentiment, urgency scores, etc.)
+    triage_metadata = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -55,6 +58,20 @@ class SupportCase(models.Model):
     def was_overridden(self):
         """True if a specialist overrode the system's initial classification."""
         return bool(self.override_category)
+
+    def save(self, *args, **kwargs):
+        # Auto-purge oldest tickets to maintain 20-ticket operational limit
+        if not self.pk: # Only on creation
+            max_tickets = 20
+            # Check current count
+            current_count = SupportCase.objects.count()
+            if current_count >= max_tickets:
+                # Delete oldest tickets to make room (handling edge case of multiple deletions if needed)
+                difference = (current_count - max_tickets) + 1
+                oldest_ids = SupportCase.objects.order_by('created_at').values_list('id', flat=True)[:difference]
+                SupportCase.objects.filter(id__in=oldest_ids).delete()
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"[{self.classification}] {self.ticket_text[:50]}..."

@@ -19,13 +19,9 @@ def index(request):
         
         if user_input.strip():
             # -- PROFESSIONAL ANALYTICS: CONTENT AUDIT --
-            unprofessional_indicators = ["idiot", "stupid", "dumb", "hate", "scam"]
-            is_flagged = any(word in user_input.lower() for word in unprofessional_indicators)
+            sentiment, sentiment_score = nlp_model.get_sentiment(user_input)
+            is_flagged = sentiment == "Angry/Frustrated" and sentiment_score > 80.0
             
-            if CustomerPortalConfig.moderation_pipeline:
-                mod_result = CustomerPortalConfig.moderation_pipeline(user_input)[0]
-                is_flagged = mod_result['label'] == 'toxic' and mod_result['score'] > 0.8
-                
             if is_flagged:
                 context['moderation_flag'] = "⚠️ Your message requires revision for professional communication. Please adjust your tone."
                 return render(request, 'customer_portal/index.html', context)
@@ -37,132 +33,49 @@ def index(request):
                 context['kb_suggestion'] = "Recommended resources for immediate resolution:"
                 context['ranked_articles'] = ranked_articles
             
-            # -- OPERATIONAL INTENT ANALYSIS --
-            intent = "Technical Inquest"
-            question_indicators = ["how", "what", "where", "can i", "is there", "?", "change", "reset", "help"]
-            if any(indicator in user_input.lower() for indicator in question_indicators):
-                intent = "Support Inquiry"
-                
-            if CustomerPortalConfig.intent_pipeline:
-                intents = ["Technical Inquest", "Support Inquiry", "Operational Feedback"]
-                intent_result = CustomerPortalConfig.intent_pipeline(user_input, intents)
-                intent = intent_result['labels'][0]
-                
-            context['intent'] = intent
+            # -- OPERATIONAL INTENT & CLASSIFICATION --
+            classification_str, certainty = nlp_model.classify_ticket(user_input)
+            prio, urgency_label, urgency_score = nlp_model.get_urgency_and_priority(user_input)
+            squad = nlp_model.get_assigned_squad(user_input)
             
-            if intent == "Support Inquiry" and ranked_articles:
-                SupportCase.objects.create(
+            # Additional metadata for context
+            context['intent'] = classification_str
+            context['urgency'] = urgency_label
+            context['classification'] = {
+                'label': classification_str,
+                'certainty': certainty,
+                'logic': "Advanced BERT Engine"
+            }
+
+            # Deflection Logic: If it's a simple inquiry and we found KB articles, don't create a real ticket
+            # (Wait, the previous code had a specific check for "Support Inquiry")
+            # We'll adapt it to check if class is "Operational Feedback" or "Technical Discrepancy"
+            if classification_str == "Operational Feedback" and ranked_articles:
+                 SupportCase.objects.create(
                     user=request.user,
                     ticket_text=user_input,
                     classification="Inquiry (Deflected)",
-                    category_code=99
+                    category_code=99,
+                    status="Deflected"
                 )
-                context['recent_tickets'] = _get_user_tickets(request.user)
-                return render(request, 'customer_portal/index.html', context)
-
-            # -- OPERATIONAL SENTIMENT & URGENCY SCORING --
-            urgency_level = "Standard"
-            priority_boost = False
-            urgent_indicators = ["angry", "frustrated", "terrible", "worst", "unacceptable", "broken", "useless", "urgent", "critical", "emergency", "production", "crash", "crashed", "down", "offline"]
-            
-            if any(w in user_input.lower() for w in urgent_indicators):
-                urgency_level = "High Priority"
-                priority_boost = True
-            
-            context['urgency'] = urgency_level
-            
-            # -- OPERATIONAL DOMAIN ASSIGNMENT (HYBRID SEMANTIC/KEYWORD) --
-            squad = None
-            creative_keywords = ["button", "css", "layout", "visual", "ui", "ux", "responsive", "frontend", "color", "header", "footer", "interface", "animation", "style", "display"]
-            systems_keywords = ["api", "database", "server", "slow", "performance", "backend", "connection", "error 500", "db", "auth", "infrastructure", "latency", "system", "offline", "crash"]
-            neural_keywords = ["logic", "algorithm", "prediction", "accuracy", "integrity", "triage", "standard", "diagnostic", "sync", "migration", "data flow", "report", "analysis", "audit", "metrics", "chart"]
-            
-            input_lower = user_input.lower()
-            if any(w in input_lower for w in neural_keywords):
-                squad = "Neural Insights"
-            elif any(w in input_lower for w in creative_keywords):
-                squad = "Creative Architecture"
-            elif any(w in input_lower for w in systems_keywords):
-                squad = "Systems Engine"
-            
-            # Semantic Routing Fallback
-            if not squad:
-                try:
-                    from developer_dashboard.semantic_search import SemanticSearchEngine
-                    import numpy as np
-                    engine = SemanticSearchEngine()
-                    input_vec = engine.model.encode([user_input])[0]
-                    # Logic: Compare input_vec with squad descriptions
-                    best_score = -1
-                    best_squad = "Systems Engine"
-                    for squad_name, desc in CustomerPortalConfig.SQUAD_CONTEXTS.items():
-                        desc_vec = engine.model.encode([desc])[0]
-                        similarity = np.dot(input_vec, desc_vec) / (np.linalg.norm(input_vec) * np.linalg.norm(desc_vec))
-                        if similarity > best_score:
-                            best_score = similarity
-                            best_squad = squad_name
-                    squad = best_squad
-                except:
-                    squad = "Systems Engine" # Hard Fallback
-
-            # Enhanced Priority Scoring (P1/P2/P3)
-            prio = "P3"
-            p1_keywords = ["emergency", "outage", "production down", "critical failure", "security breach", "data loss", "cannot access"]
-            if any(w in input_lower for w in p1_keywords):
-                prio = "P1"
-            elif priority_boost:
-                prio = "P2"
-
-            tokenizer = CustomerPortalConfig.tokenizer
-            model = CustomerPortalConfig.model
-            
-            classification_str = "Standard Inquiry"
-            certainty = 0.0
-            prediction_id = 99
-            triage_logic = "Specialized BERT"
-
-            # STEP 1: Specialized BERT
-            if tokenizer and model:
-                import torch
-                inputs = tokenizer(user_input, return_tensors="pt", padding=True, truncation=True, max_length=128)
-                with torch.no_grad():
-                    outputs = model(**inputs)
-                
-                probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
-                prediction_id = torch.argmax(probabilities, dim=-1).item()
-                certainty = probabilities[0][prediction_id].item()
-
-                labels = {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
-                classification_str = labels.get(prediction_id, "Standard Inquiry")
-
-            # STEP 2: Universal Zero-Shot Fallback (If BERT is uncertain)
-            if certainty < 0.70 and CustomerPortalConfig.intent_pipeline:
-                triage_labels = [
-                    "Technical Discrepancy", "Operational Feedback", "Account/Billing", 
-                    "Security/Compliance", "Feature Request", "Emergency Outage"
-                ]
-                z_result = CustomerPortalConfig.intent_pipeline(user_input, triage_labels)
-                classification_str = z_result['labels'][0]
-                certainty = z_result['scores'][0]
-                triage_logic = "Universal Zero-Shot"
-                prediction_id = 100 # Custom code for ZS
-
-            context['classification'] = {
-                'label': classification_str,
-                'certainty': round(certainty * 100, 2),
-                'logic': triage_logic
-            }
+                 context['recent_tickets'] = _get_user_tickets(request.user)
+                 return render(request, 'customer_portal/index.html', context)
 
             SupportCase.objects.create(
                 user=request.user,
                 ticket_text=user_input,
                 classification=classification_str,
-                category_code=prediction_id,
-                system_certainty=round(certainty * 100, 2),
+                category_code=0 if classification_str == "Technical Discrepancy" else 1,
+                system_certainty=certainty,
                 assigned_team=squad,
                 priority=prio,
                 status="Open",
-                triage_metadata={'logic': triage_logic}
+                triage_metadata={
+                    'logic': 'Centralized NLP Pipeline',
+                    'sentiment': sentiment,
+                    'sentiment_score': sentiment_score,
+                    'urgency_score': urgency_score
+                }
             )
             
             latest_case = SupportCase.objects.filter(user=request.user).latest('id')

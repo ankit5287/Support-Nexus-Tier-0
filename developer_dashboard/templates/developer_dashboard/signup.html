@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Provisioning — Nexus Global</title>
+    <title>Provisioning — Logic Stream</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <style>
         body {
@@ -27,7 +27,7 @@
 
 <body style="opacity:0; transition: opacity 0.5s;">
     <div class="auth-container anim-liquid-fade">
-        <a href="/" class="nx-logo" style="display:block;margin-bottom:48px;">Nexus<span class="nx-logo-dot">.</span>Global</a>
+        <a href="/" class="nx-logo" style="display:block;margin-bottom:48px;">Logic Stream<span class="nx-logo-dot">.</span>Global</a>
         
         <div style="margin-bottom:32px;">
             <h1 class="heading-md" style="font-size:1.5rem; margin-bottom:8px;">Provision Credentials</h1>
@@ -65,9 +65,15 @@
         </form>
 
         <div style="margin-top:40px; text-align:center; border-top: 1px solid var(--border-subtle); padding-top:24px;">
+            <div style="display:flex; justify-content:center; gap:16px; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; opacity:0.6; margin-bottom:16px;">
+                <a href="#" style="color:var(--text-3); text-decoration:none;">Engineering Documentation</a>
+                <a href="#" style="color:var(--text-3); text-decoration:none;">SLA</a>
+                <a href="#" style="color:var(--text-3); text-decoration:none;">Compliance</a>
+            </div>
             <p class="body-sm">Already provisioned?<br>
-            <a href="{% url 'dev_login' %}" style="color:var(--accent-blue); text-decoration:none; display:inline-block; margin-top:12px;">Authorize Session →</a>
+            <a href="{% url 'dev_login' %}" style="color:var(--accent-blue); text-decoration:none; display:inline-block; margin-top:12px; font-weight:700;">Authorize Session →</a>
             </p>
+            <p style="font-size:0.6rem; color:var(--text-3); margin-top:24px; opacity:0.4;">© 2026 Logic Stream Operations Hub</p>
         </div>
     </div>
 

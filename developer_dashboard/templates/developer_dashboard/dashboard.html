@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Command Center — Nexus Global</title>
+    <title>Operational Command Center — Logic Stream</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -122,7 +122,7 @@
         <!-- NAVBAR -->
         <nav class="nx-nav">
             <div class="nx-nav-inner">
-                <a href="/" class="nx-logo">Nexus<span class="nx-logo-dot">.</span>Global</a>
+                <a href="/" class="nx-logo">Logic Stream</a>
                 <div class="nx-nav-links">
                     <a href="{% url 'dashboard' %}">Common Hub</a>
                     <div class="dropdown">
@@ -181,12 +181,18 @@
             </div>
 
             <div class="command-layout">
-                <!-- MAIN COMMAND AREA -->
+                <!-- MAIN COMMAND AREA: THE GLOBAL OPERATIONAL STREAM -->
                 <div class="command-main">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
-                        <h2 class="kpi-label" style="margin:0;">Global Operational Stream {% if active_filter %}/ {{ active_filter }}{% endif %}</h2>
+                        <div>
+                            <h2 class="kpi-label" style="margin:0;">Global Operational Stream</h2>
+                            <p class="body-sm" style="font-size:0.65rem; opacity:0.6; margin-top:4px;">Real-time Transmission Monitor — Domain Integrity Analysis</p>
+                        </div>
                         {% if active_filter %}
-                        <a href="{% url 'dashboard' %}" style="font-size:0.7rem; color:var(--text-3); text-decoration:none;">Clear Filter [x]</a>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <span class="badge" style="background:rgba(59,130,246,0.1); color:var(--accent-blue);">Active Node: {{ active_filter }}</span>
+                            <a href="{% url 'dashboard' %}" style="font-size:0.75rem; color:var(--accent-rose); text-decoration:none; font-weight:700;">[Terminate Filter]</a>
+                        </div>
                         {% endif %}
                     </div>
                     
@@ -200,42 +206,49 @@
                                     <span class="ticket-team">/ {{ t.team }}</span>
                                 </div>
                                 <span class="ticket-subject">{{ t.title|safe }}</span>
-                                <div style="font-size:0.7rem; color:var(--text-3); margin-top:4px;">
-                                    Assigned: {{ t.assigned }} · Origin: {{ t.user }}
+                                <div style="font-size:0.7rem; color:var(--text-3); margin-top:6px; display:flex; gap:12px; align-items:center;">
+                                    <span>Specialist: {{ t.assigned }} · Origin: {{ t.user }}</span>
+                                    <span style="color: {% if t.sentiment_val > 70 %}var(--accent-rose){% else %}var(--accent-sage){% endif %}; font-weight:700; opacity:0.9;">
+                                        AI Sentiment: {{ t.sentiment }} ({{ t.sentiment_val|floatformat:1 }}%)
+                                    </span>
+                                    <span style="opacity:0.6; font-style:italic;">Entropy Logic: {{ t.urgency_score|floatformat:0 }}% certainty</span>
                                 </div>
                             </div>
-                            <div style="display:flex; gap:16px; align-items:center;">
+                            <div style="display:flex; gap:20px; align-items:center;">
                                 <div id="status-badge-{{ t.id }}">
-                                    <span class="badge status-{{ t.status|lower|cut:' ' }}" style="padding:4px 10px;">{{ t.status }}</span>
+                                    <span class="badge status-{{ t.status|lower|cut:' ' }}" style="padding:6px 12px; font-weight:800;">{{ t.status|upper }}</span>
                                 </div>
                                 <select class="status-select" 
                                         name="status" 
                                         hx-post="{% url 'update_status_htmx' t.id %}" 
                                         hx-target="#status-badge-{{ t.id }}"
                                         hx-swap="innerHTML">
-                                    <option value="">Move Status...</option>
+                                    <option value="">Sync Status...</option>
                                     <option value="Open" {% if t.status == 'Open' %}selected{% endif %}>Open</option>
                                     <option value="In Progress" {% if t.status == 'In Progress' %}selected{% endif %}>In Progress</option>
                                     <option value="Resolved" {% if t.status == 'Resolved' %}selected{% endif %}>Resolved</option>
                                     <option value="Escalated" {% if t.status == 'Escalated' %}selected{% endif %}>Escalated</option>
                                 </select>
-                                <a href="{% url 'team_view' t.team %}?focus={{ t.id }}" class="btn btn-ghost" style="padding:6px 14px; font-size:0.7rem;">Specialist View</a>
+                                <a href="{% url 'team_view' t.team %}?focus={{ t.id }}" class="btn btn-ghost" style="padding:8px 16px; font-size:0.7rem; letter-spacing:0.05em;">Specialist Root</a>
                             </div>
                         </div>
                         {% endfor %}
                         {% else %}
-                        <p class="body-sm" style="opacity:0.5; padding:40px 0; text-align:center;">No operational anomalies identified.</p>
+                        <div style="padding:80px 0; text-align:center;">
+                            <p class="body-sm" style="opacity:0.4;">Operational stream synchronized. No anomalies detected.</p>
+                        </div>
                         {% endif %}
                     </div>
                 </div>
 
-                <!-- SIDEBAR ANALYTICS -->
+                <!-- SIDEBAR ANALYTICS: INTERACTIVE MONITOR -->
                 <div class="command-sidebar">
                     <div style="margin-bottom:48px;">
                         <h4 class="kpi-label">Distribution Circle</h4>
                         <div style="padding:24px 0; position:relative;">
                             <canvas id="distributionChart"></canvas>
                         </div>
+                        <p class="body-sm" style="font-size:0.6rem; opacity:0.5; text-align:center;">Interactive segments: Click to filter stream.</p>
                     </div>
 
                     <div class="velocity-container">
@@ -245,7 +258,7 @@
                         </div>
                     </div>
 
-                    <div style="margin-bottom:48px;">
+                    <div>
                         <h4 class="kpi-label">Performance Core</h4>
                         <div class="kpi-card">
                             <div class="kpi-label">Transmission Volume</div>
@@ -261,8 +274,16 @@
 
         </div>
 
-        <footer class="footer-copy">
-            &copy; 2026 Nexus Global Operations Hub · <span style="opacity:0.5;">Last Sync: {{ last_sync }}</span>
+        <footer class="footer-copy" style="padding: 40px 0; border-top: 1px solid var(--border-subtle); margin-top: 60px;">
+            <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>&copy; 2026 Logic Stream Operations Hub</div>
+                <div style="display:flex; gap:24px; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">
+                    <a href="#" style="color:var(--accent-blue); text-decoration:none;">Engineering Documentation</a>
+                    <a href="#" style="color:var(--text-3); text-decoration:none;">SLA</a>
+                    <a href="#" style="color:var(--text-3); text-decoration:none;">Compliance</a>
+                    <span style="color:var(--accent-sage);">Logic Stream Status: Active</span>
+                </div>
+            </div>
         </footer>
     </div>
 

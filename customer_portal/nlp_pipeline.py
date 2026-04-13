@@ -1,6 +1,9 @@
 import re
 import string
 import os
+import torch
+from django.conf import settings
+from .apps import CustomerPortalConfig
 
 # Categories from the NLP Case Study
 CATEGORIES = {
@@ -11,36 +14,6 @@ CATEGORIES = {
     4: "Mortgages / Loans"
 }
 
-# Seed Dataset for training a demonstration model
-SEED_DATA = [
-    ("How do I change my bank account password for my savings account?", 0),
-    ("I need to open a new checking account with your bank.", 0),
-    ("My debit card is not working at the ATM.", 0),
-    ("Can you help me set up direct deposit for my salary?", 0),
-    ("I lost my credit card and need a replacement immediately.", 1),
-    ("Why was I charged a late fee on my credit card bill?", 1),
-    ("I want to increase the credit limit on my platinum card.", 1),
-    ("How do I activate my new prepaid card?", 1),
-    ("The mobile app keeps crashing whenever I try to log in.", 2),
-    ("I love the new design of the portal, great job!", 2),
-    ("There is a typo in the user manual for the digital wallet.", 2),
-    ("How do I contact customer support via email?", 2),
-    ("There is a fraudulent transaction on my account that I didn't authorize.", 3),
-    ("I want to report a stolen identity and lock my accounts.", 3),
-    ("Someone used my card to buy things in another country.", 3),
-    ("I am disputing a charge from a merchant who never delivered the goods.", 3),
-    ("What are the current interest rates for a 30-year fixed home loan?", 4),
-    ("I want to apply for a mortgage to buy my first house.", 4),
-    ("Can I refinance my student loans with your company?", 4),
-    ("I need a statement of my remaining loan balance for tax purposes.", 4),
-    # Adding more to ensure variety
-    ("My bank statement shows an incorrect balance.", 0),
-    ("I want to cancel my credit card.", 1),
-    ("The website is slow today.", 2),
-    ("Identity theft report.", 3),
-    ("Home loan eligibility criteria.", 4)
-]
-
 def clean_text(text):
     """Regex based cleaning identical to the Case Study."""
     text = text.lower()
@@ -48,36 +21,6 @@ def clean_text(text):
     text = re.sub(r'[%s]' % re.escape(string.punctuation), '', text)
     text = re.sub(r'\w*\d\w*', '', text)
     return text
-
-# Attempt to import NLP libraries
-SKLEARN_AVAILABLE = False
-SPACY_AVAILABLE = False
-nlp = None
-
-try:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.linear_model import LogisticRegression
-    SKLEARN_AVAILABLE = True
-except ImportError:
-    pass
-
-try:
-    import spacy
-    try:
-        nlp = spacy.load("en_core_web_sm")
-        SPACY_AVAILABLE = True
-    except OSError:
-        print("[NLP Pipeline] WARNING: spaCy model 'en_core_web_sm' not found. Run 'python -m spacy download en_core_web_sm'")
-except ImportError:
-    pass
-
-def extract_nouns(text):
-    """Extracts only nouns as per the Case Study logic to improve topic accuracy."""
-    if not SPACY_AVAILABLE or nlp is None:
-        return text # Return cleaned text as fallback
-    
-    doc = nlp(text)
-    return " ".join([token.lemma_ for token in doc if token.pos_ == "NOUN"])
 
 class NLPClassifier:
     _instance = None
@@ -90,60 +33,143 @@ class NLPClassifier:
 
     def __init__(self):
         if self._initialized: return
-        
-        self.vectorizer = None
-        self.model = None
-        self.is_trained = False
-        
-        if SKLEARN_AVAILABLE:
-            try:
-                print("[NLP Pipeline] Training demonstration classifier on seed dataset...")
-                X = [extract_nouns(clean_text(text)) for text, label in SEED_DATA]
-                y = [label for text, label in SEED_DATA]
-                
-                self.vectorizer = TfidfVectorizer(max_features=1000)
-                tfidf_matrix = self.vectorizer.fit_transform(X)
-                
-                self.model = LogisticRegression(max_iter=1000)
-                self.model.fit(tfidf_matrix, y)
-                self.is_trained = True
-                print("[NLP Pipeline] SUCCESS: Financial routing model ready!")
-            except Exception as e:
-                print(f"[NLP Pipeline] ERROR: Error training demo model: {e}")
-        
         self._initialized = True
 
-    def predict(self, text):
-        """Predicts the financial category of the input text."""
-        if not self.is_trained:
-            # Simple keyword matching fallback (Robust word-boundary search)
-            processed = clean_text(text)
-            
-            # Map of keywords to categories
-            mapping = [
-                (4, ["loan", "mortgage", "house", "interest", "refinance", "home"]),
-                (3, ["stolen", "dispute", "theft", "fraud", "scam", "authorized", "fraudulent"]),
-                (1, ["credit", "card", "prepaid", "platinum", "visa", "mastercard"]),
-                (0, ["bank", "account", "savings", "atm", "checking", "deposit", "transfer", "statement"])
-            ]
-            
-            for cat_id, keywords in mapping:
-                if any(re.search(r'\b' + re.escape(w), processed) for w in keywords):
-                    return CATEGORIES[cat_id], 85.0
-                    
-            return CATEGORIES[2], 70.0
+    def classify_ticket(self, text):
+        """
+        Uses the fine-tuned BERT model to categorize the ticket.
+        Falls back to keyword matching if the model is unavailable.
+        """
+        tokenizer = CustomerPortalConfig.tokenizer
+        model = CustomerPortalConfig.model
         
-        try:
-            processed = extract_nouns(clean_text(text))
-            X_text = self.vectorizer.transform([processed])
-            prediction_id = self.model.predict(X_text)[0]
-            probabilities = self.model.predict_proba(X_text)[0]
-            confidence = probabilities[prediction_id] * 100
-            
-            return CATEGORIES.get(prediction_id, "Others"), round(confidence, 2)
-        except Exception as e:
-            print(f"[NLP Pipeline] Prediction error: {e}")
-            return "Others", 0.0
+        if tokenizer and model:
+            try:
+                inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128)
+                with torch.no_grad():
+                    outputs = model(**inputs)
+                
+                probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
+                prediction_id = torch.argmax(probabilities, dim=-1).item()
+                confidence = probabilities[0][prediction_id].item() * 100
+
+                # Map BERT indices to our labels
+                # Note: The BERT model might have different labels than SEED_DATA
+                # Based on views.py, it expects: {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
+                # But nlp_pipeline.py originally had financial categories.
+                # We will stick to the enterprise narrative:
+                labels = {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
+                return labels.get(prediction_id, "Inquiry"), round(confidence, 2)
+            except Exception as e:
+                print(f"[NLP Pipeline] BERT prediction error: {e}")
+        
+        # Keyword Fallback
+        processed = clean_text(text)
+        mapping = [
+            ("Account/Billing", ["bill", "pay", "charge", "refund", "credit", "card"]),
+            ("Technical Discrepancy", ["error", "bug", "broken", "fail", "slow", "crash"]),
+            ("Operational Feedback", ["suggestion", "improvement", "love", "great", "ux"])
+        ]
+        
+        for label, keywords in mapping:
+            if any(re.search(r'\b' + re.escape(w), processed) for w in keywords):
+                return label, 85.0
+                
+        return "Others", 70.0
+
+    def get_urgency_and_priority(self, text):
+        """
+        Uses Zero-Shot classification to determine urgency and priority.
+        """
+        pipeline = CustomerPortalConfig.intent_pipeline
+        input_lower = text.lower()
+        
+        priority = "P3"
+        urgency_label = "Standard"
+        confidence = 0.0
+
+        if pipeline:
+            try:
+                candidate_labels = ["Critical Emergency", "High Urgency", "Standard Request"]
+                result = pipeline(text, candidate_labels)
+                top_label = result['labels'][0]
+                confidence = result['scores'][0]
+
+                if top_label == "Critical Emergency":
+                    priority = "P1"
+                    urgency_label = "Critical"
+                elif top_label == "High Urgency":
+                    priority = "P2"
+                    urgency_label = "High"
+                else:
+                    priority = "P3"
+                    urgency_label = "Standard"
+            except Exception as e:
+                print(f"[NLP Pipeline] Urgency detection error: {e}")
+
+        # Keyword boost
+        p1_keywords = ["emergency", "outage", "production down", "critical failure", "security breach", "data loss", "cannot access"]
+        if any(w in input_lower for w in p1_keywords):
+            priority = "P1"
+            urgency_label = "Critical (Override)"
+
+        return priority, urgency_label, round(confidence * 100, 2)
+
+    def get_sentiment(self, text):
+        """
+        Detects customer sentiment (Happy/Neutral vs Angry/Frustrated).
+        """
+        pipeline = CustomerPortalConfig.moderation_pipeline
+        # If moderation_pipeline is not loaded, we can use the intent_pipeline as a fallback for sentiment
+        fallback_pipeline = CustomerPortalConfig.intent_pipeline
+        
+        sentiment = "Neutral"
+        score = 0.0
+
+        if pipeline:
+            try:
+                result = pipeline(text)[0]
+                label = result['label'].lower()
+                score = result['score']
+                
+                # Handling cardiffnlp labels: negative, neutral, positive
+                if label == 'negative':
+                    sentiment = "Angry/Frustrated"
+                elif label == 'positive':
+                    sentiment = "Happy/Satisfied"
+                elif label == 'neutral':
+                    sentiment = "Professional"
+                # Fallback for toxic-comment-model if used instead
+                elif label == 'toxic':
+                    sentiment = "Angry/Frustrated"
+                else:
+                    sentiment = "Professional"
+            except:
+                pass
+        elif fallback_pipeline:
+            try:
+                labels = ["Angry/Frustrated", "Neutral", "Happy/Satisfied"]
+                result = fallback_pipeline(text, labels)
+                sentiment = result['labels'][0]
+                score = result['scores'][0]
+            except:
+                pass
+        
+        return sentiment, round(score * 100, 2)
+
+    def get_assigned_squad(self, text):
+        """Determines which squad should handle the ticket."""
+        creative_keywords = ["button", "css", "layout", "visual", "ui", "ux", "responsive", "frontend", "color", "header", "footer", "interface", "animation", "style", "display"]
+        systems_keywords = ["api", "database", "server", "slow", "performance", "backend", "connection", "error 500", "db", "auth", "infrastructure", "latency", "system", "offline", "crash"]
+        
+        input_lower = text.lower()
+        if any(w in input_lower for w in creative_keywords):
+            return "Creative Architecture"
+        elif any(w in input_lower for w in systems_keywords):
+            return "Systems Engine"
+        
+        return "Neural Insights"
 
 # Singleton instance
 classifier = NLPClassifier()
+

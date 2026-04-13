@@ -39,28 +39,23 @@ class SemanticSearchEngine:
 
     def calculate_weighted_score(self, ticket, cosine_similarity):
         """
-        Score = (Similarity * 0.6) + (Recency * 0.2) + (Priority/Status * 0.2)
+        High-End Academic Ranking: 
+        Score = (Similarity * 0.6) + (Status/Resolved * 0.2) + (Recency * 0.2)
         """
-        # 1. Similarity (0 to 1)
+        # 1. Semantic Similarity (60%)
         sim_score = max(0, min(1, float(cosine_similarity)))
         
-        # 2. Recency (0 to 1) - Linear decay over 30 days
+        # 2. Status/Resolved Boost (20%)
+        # Logic: In an academic/audit context, resolved cases are often high-value patterns.
+        status_score = 1.0 if ticket.status == 'Resolved' else 0.4
+        
+        # 3. Recency (20%) - Linear decay over 30 days
         now = timezone.now()
         delta = now - ticket.created_at
         days_old = delta.days + (delta.seconds / 86400)
         recency_score = max(0, 1 - (days_old / 30))
         
-        # 3. Status/Priority Weight (0 to 1)
-        # Resolved = 1.0, Escalated = 0.8, In Progress = 0.5, Open = 0.2
-        status_weights = {
-            'Resolved': 1.0,
-            'Escalated': 0.8,
-            'In Progress': 0.5,
-            'Open': 0.2
-        }
-        status_score = status_weights.get(ticket.status, 0.2)
-        
-        final_score = (sim_score * 0.6) + (recency_score * 0.2) + (status_score * 0.2)
+        final_score = (sim_score * 0.6) + (status_score * 0.2) + (recency_score * 0.2)
         return final_score
 
     def search(self, query, top_k=15):

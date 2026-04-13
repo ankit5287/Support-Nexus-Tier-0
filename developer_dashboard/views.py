@@ -13,7 +13,7 @@ def staff_required(user):
 
 
 def search_suggest(request):
-    """Google-Style Autocomplete API."""
+    """Google-Style Autocomplete API - Nexus CRM Tailored."""
     from customer_portal.models import SupportCase
     from django.http import JsonResponse
     
@@ -21,21 +21,27 @@ def search_suggest(request):
     if not query:
         return JsonResponse({'suggestions': []})
         
-    # Pool of potential suggestions: Unique ticket titles and Common CRM Queries
+    # High-End CRM Contextual Predictions
     common_queries = [
-        "lead import timeout", "navigation lag in firefox", "bert re-classification",
-        "database connection error", "api latency spikes", "sso authentication failure",
-        "css layout breakage", "backend performance audit", "ui responsive issues"
+        "SQL database sync timeout following nightly migration",
+        "API latency spike in lead management system",
+        "SSO authentication failure for external client nodes",
+        "CSS layout discrepancy in responsive mobile dashboard",
+        "Backend performance audit: memory leak in worker threads",
+        "CRM data integrity audit resulting in discrepancy",
+        "Load balancer failure in US-East-1 region",
+        "Frontend animation lag on high-traffic landing nodes",
+        "API rate limit exceeded for logic stream integration"
     ]
     
     # Existing ticket snippets with IDs
-    ticket_data = list(SupportCase.objects.values('id', 'ticket_text').distinct()[:30])
+    ticket_data = list(SupportCase.objects.values('id', 'ticket_text').distinct()[:40])
     
     pool = []
     for cq in common_queries:
         pool.append({'val': cq, 'id': None})
     for t in ticket_data:
-        pool.append({'val': t['ticket_text'][:100], 'id': t['id']})
+        pool.append({'val': t['ticket_text'][:80], 'id': t['id']})
     
     # Filter based on partial match
     suggestions = [item for item in pool if query in item['val'].lower()][:8]
@@ -93,7 +99,10 @@ def dashboard(request):
                 "user": log.user.username if log.user else "Anonymous",
                 "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
                 "date": log.created_at.strftime('%b %d'),
-                "is_focus": str(log.id) == str(focus_id)
+                "is_focus": str(log.id) == str(focus_id),
+                "sentiment": log.triage_metadata.get('sentiment', 'N/A') if log.triage_metadata else 'N/A',
+                "sentiment_val": log.triage_metadata.get('sentiment_score', 0) if log.triage_metadata else 0,
+                "urgency_score": log.triage_metadata.get('urgency_score', 0) if log.triage_metadata else 0,
             })
         context['is_search'] = True
     else:
@@ -108,7 +117,10 @@ def dashboard(request):
                 "user": log.user.username if log.user else "Anonymous",
                 "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
                 "date": log.created_at.strftime('%b %d'),
-                "is_focus": str(log.id) == str(focus_id)
+                "is_focus": str(log.id) == str(focus_id),
+                "sentiment": log.triage_metadata.get('sentiment', 'N/A') if log.triage_metadata else 'N/A',
+                "sentiment_val": log.triage_metadata.get('sentiment_score', 0) if log.triage_metadata else 0,
+                "urgency_score": log.triage_metadata.get('urgency_score', 0) if log.triage_metadata else 0,
             })
 
     # If focused but not in list, bring to top
@@ -124,7 +136,10 @@ def dashboard(request):
                 "user": log.user.username if log.user else "Anonymous",
                 "assigned": log.assigned_to.username if log.assigned_to else "Unassigned",
                 "date": log.created_at.strftime('%b %d'),
-                "is_focus": True
+                "is_focus": True,
+                "sentiment": log.triage_metadata.get('sentiment', 'N/A') if log.triage_metadata else 'N/A',
+                "sentiment_val": log.triage_metadata.get('sentiment_score', 0) if log.triage_metadata else 0,
+                "urgency_score": log.triage_metadata.get('urgency_score', 0) if log.triage_metadata else 0,
             })
         except: pass
     
@@ -293,59 +308,9 @@ def dashboard(request):
     return render(request, 'developer_dashboard/dashboard.html', context)
 
 
-@login_required(login_url='/dev/login/')
-@user_passes_test(staff_required, login_url='/')
-def ide_view(request):
-    """Full-Page Operational Logic Studio."""
-    context = {}
-    STABLE_CODE = """def process_transaction(request):
-    # Core system processing logic
-    if request.valid:
-        return 'Success'
-    return 'Discrepancy'"""
-
-    if request.method == 'POST':
-        action = request.POST.get('action', '')
-        current_code = request.POST.get('code', '')
-        context['current_code'] = current_code
-        
-        if action == 'polish':
-            api_key = os.environ.get("GEMINI_API_KEY", "")
-            if api_key:
-                try:
-                    import google.generativeai as genai
-                    genai.configure(api_key=api_key)
-                    model = genai.GenerativeModel('gemini-1.5-pro-latest')
-                    prompt = f"Standardize and optimize this business logic for production. Return ONLY the code:\n\n{current_code}"
-                    response = model.generate_content(prompt)
-                    context['current_code'] = response.text.replace('```python', '').replace('```', '').strip()
-                    context['success'] = "Logic optimization complete."
-                except Exception as e:
-                    context['error'] = f"System Error: {str(e)}"
-            else:
-                context['error'] = "Logic engine not configured."
-                
-        elif action == 'merge':
-            diff = difflib.unified_diff(
-                STABLE_CODE.splitlines(keepends=True),
-                current_code.splitlines(keepends=True),
-                fromfile='production_stable.py',
-                tofile='candidate_logic.py'
-            )
-            context['diff_output'] = "".join(diff)
-            context['is_merge_view'] = True
-            
-        elif action == 'run':
-            context['run_output'] = ">>> Initiating structural test...\n>>> Validation: SUCCESS\n>>> Operational Latency: 12ms"
-
-    else:
-        context['current_code'] = STABLE_CODE
-
-    return render(request, 'developer_dashboard/ide.html', context)
-
-
-# DELETED: Strategic Comparison Analysis Suite
-
+def logout_view(request):
+    logout(request)
+    return redirect('/dev/login/')
 
 
 @login_required(login_url='/dev/login/')

@@ -21,7 +21,7 @@ class CustomerPortalConfig(AppConfig):
         if os.environ.get('RUN_MAIN', None) != 'true':
             return
 
-        print("[Nexus Quantum] Initializing Case Triage Systems...")
+        print("[Logic Stream] Initializing Case Triage Systems...")
 
         # 1. Load Custom BERT (Ticket Classifier)
         try:
@@ -35,34 +35,35 @@ class CustomerPortalConfig(AppConfig):
                 CustomerPortalConfig.model = BertForSequenceClassification.from_pretrained(
                     MODEL_PATH,
                     low_cpu_mem_usage=False,
-                    ignore_mismatched_sizes=True
+                    ignore_mismatched_sizes=True,
+                    use_safetensors=True
                 )
                 CustomerPortalConfig.model.to("cpu")
                 CustomerPortalConfig.model.eval()
-                print("[Nexus Quantum] ✅ Intelligent Triage Engine Online!")
+                print("[Logic Stream] ✅ Intelligent Triage Engine Online!")
             else:
-                print("[Nexus Quantum] WARNING: Triage engine model not found. Using operational fallback.")
+                print("[Logic Stream] WARNING: Triage engine model not found. Using operational fallback.")
         except ImportError:
-            print("[Nexus Quantum] WARNING: Essential processing libraries not installed. Triage engine unavailable.")
+            print("[Logic Stream] WARNING: Essential processing libraries not installed. Triage engine unavailable.")
         except Exception as e:
-            print(f"[Nexus Quantum] WARNING: Error initializing triage engine: {e}")
+            print(f"[Logic Stream] WARNING: Error initializing triage engine: {e}")
 
         # 2. Load Content Analytics (Sentiment/Tone Analysis)
-        # try:
-        #     from transformers import pipeline
-        #     CustomerPortalConfig.moderation_pipeline = pipeline("text-classification", model="martin-ha/toxic-comment-model")
-        #     print("[Nexus Quantum] ✅ Analytic Tone Analysis Online!")
-        # except Exception as e:
-        #     print(f"[Nexus Quantum] WARNING: Moderation model error: {e}")
-
-        # 3. Load Intent Classification (Zero-Shot) — The Universal Fallback
         try:
             from transformers import pipeline
-            # Using a high-performance DistilBART for efficiency
+            CustomerPortalConfig.moderation_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
+            print("[Logic Stream] ✅ Analytic Tone Analysis Online!")
+        except Exception as e:
+            print(f"[Logic Stream] WARNING: Moderation model error: {e}")
+
+        # 3. Load Intent Classification (Zero-Shot) — The Logic Fallback
+        try:
+            from transformers import pipeline
+            # Using a high-performance model with safetensors support
             CustomerPortalConfig.intent_pipeline = pipeline(
                 "zero-shot-classification", 
-                model="valhalla/distilbart-mnli-12-1"
+                model="facebook/bart-large-mnli"
             )
-            print("[Nexus Quantum] ✅ Universal Zero-Shot Triage Online!")
+            print("[Logic Stream] ✅ Zero-Shot Triage Online!")
         except Exception as e:
-            print(f"[Nexus Quantum] WARNING: Zero-Shot initialization error: {e}")
+            print(f"[Logic Stream] WARNING: Zero-Shot initialization error: {e}")

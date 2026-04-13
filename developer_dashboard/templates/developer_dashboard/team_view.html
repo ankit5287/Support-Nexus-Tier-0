@@ -118,72 +118,84 @@
                     <h2 class="kpi-label" style="margin-bottom:32px;">Operational Task Pool</h2>
                     
                     <div style="background: var(--border-subtle); border: 1px solid var(--border-subtle);">
-                        <div class="ticket-row" style="background: var(--bg-surface); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; color: var(--text-3);">
+                        <div class="ticket-row" style="background: var(--bg-surface); font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: var(--text-3); letter-spacing:0.05em;">
                             <div>ID</div>
-                            <div>Briefing Abstract</div>
+                            <div>Briefing Abstract & Logic Metadata</div>
                             <div>Status</div>
-                            <div>Action</div>
+                            <div>Routing</div>
                         </div>
 
                         {% for t in team_tickets %}
                         <div class="ticket-row {% if focus_ticket.id == t.id %}highlight{% endif %}">
-                            <div class="ticket-id">LOG-{{ t.id }}</div>
+                            <div class="ticket-id" style="font-family:monospace; font-size:0.85rem; color:var(--accent-blue);">LOG-{{ t.id }}</div>
                             <div class="ticket-info">
-                                <span class="ticket-subject">{{ t.ticket_text|truncatechars:100 }}</span>
-                                <div style="font-size:0.7rem; color:var(--text-3); margin-top:4px;">
-                                    Priority: {{ t.priority }} · Specialist: {{ t.assigned_to.username|default:"Unassigned" }}
+                                <span class="ticket-subject" style="font-weight:600; font-size:0.95rem;">{{ t.ticket_text|truncatechars:120 }}</span>
+                                <div style="font-size:0.7rem; color:var(--text-3); margin-top:8px; display:flex; gap:16px;">
+                                    <span style="color:var(--accent-sage);">Intent: {{ t.classification }}</span>
+                                    <span>BERT Certainty: {{ t.system_certainty }}%</span>
+                                    <span>Specialist: {{ t.assigned_to.username|default:"@unassigned" }}</span>
                                 </div>
                             </div>
                             <div>
-                                <span class="badge status-{{ t.status|lower|cut:' ' }}">{{ t.status }}</span>
+                                <span class="badge status-{{ t.status|lower|cut:' ' }}" style="padding:6px 12px; font-weight:700;">{{ t.status }}</span>
                             </div>
                             <div>
                                 <form action="{% url 'transfer_ticket' t.id %}" method="POST" style="display:flex; gap:8px;">
                                     {% csrf_token %}
-                                    <select name="target_team" class="transfer-select">
+                                    <select name="target_team" class="transfer-select" style="background:#111; border:1px solid var(--border-subtle); color:#fff; font-size:0.65rem; padding:4px;">
                                         <option value="">Transfer...</option>
                                         <option value="Systems Engine">Systems Engine</option>
                                         <option value="Creative Architecture">Creative Architecture</option>
                                         <option value="Neural Insights">Neural Insights</option>
                                     </select>
-                                    <button type="submit" class="btn btn-primary" style="padding:4px 8px; font-size:0.65rem;">Route</button>
+                                    <button type="submit" class="btn btn-primary" style="padding:4px 10px; font-size:0.7rem; font-weight:800;">ROUTE</button>
                                 </form>
                             </div>
                         </div>
                         {% empty %}
-                        <div style="padding:60px; text-align:center; background:#000;">
-                            <p class="body-sm" style="opacity:0.4;">Node stream currently clear.</p>
+                        <div style="padding:80px; text-align:center; background:#000;">
+                            <p class="body-sm" style="opacity:0.4; letter-spacing:0.05em;">Node stream currently synchronized. No pending anomalies.</p>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
 
                 <div class="team-sidebar">
-                    <h4 class="kpi-label" style="margin-bottom:32px;">Specialist Availability</h4>
+                    <h4 class="kpi-label" style="margin-bottom:32px;">Specialist Accountability</h4>
                     
-                    {% for dev in accountability_list %}
-                    <div class="dev-card">
-                        <div class="dev-info">
-                            <span class="dev-name">{{ dev.user }}</span>
-                            <span class="dev-task">
-                                {% if dev.current_task %}
-                                Resolving LOG-{{ dev.current_task.id }}
-                                {% else %}
-                                Standby
-                                {% endif %}
+                    <div style="display:flex; flex-direction:column; gap:16px;">
+                        {% for dev in accountability_list %}
+                        <div class="dev-card" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-subtle); padding:20px; display:flex; justify-content:space-between; align-items:center;">
+                            <div class="dev-info">
+                                <span class="dev-name" style="display:block; font-weight:800; color:#fff; font-size:0.8rem; text-transform:uppercase;">@{{ dev.user }}</span>
+                                <span class="dev-task" style="display:block; font-size:0.65rem; color:var(--text-3); margin-top:4px;">
+                                    {% if dev.current_task %}
+                                    Managing LOG-{{ dev.current_task.id }}
+                                    {% else %}
+                                    Operational Standby
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <span class="badge" style="border-radius:2px; font-size:0.6rem; padding:4px 8px; border-color: {% if dev.status == 'Processing' %}var(--accent-blue){% else %}var(--accent-sage){% endif %}; color: {% if dev.status == 'Processing' %}var(--accent-blue){% else %}var(--accent-sage){% endif %};">
+                                {{ dev.status|upper }}
                             </span>
                         </div>
-                        <span class="badge" style="border-color: {% if dev.status == 'Processing' %}var(--accent-blue){% else %}var(--accent-teal){% endif %}; color: {% if dev.status == 'Processing' %}var(--accent-blue){% else %}var(--accent-teal){% endif %};">
-                            {{ dev.status }}
-                        </span>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
 
-        <footer class="footer-copy">
-            &copy; 2026 Nexus Global Operations Hub
+        <footer class="footer-copy" style="padding: 40px 0; border-top: 1px solid var(--border-subtle); margin-top: 60px;">
+            <div class="container" style="display:flex; justify-content:space-between; align-items:center;">
+                <div>&copy; 2026 Nexus Global Operations Hub</div>
+                <div style="display:flex; gap:24px; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">
+                    <a href="#" style="color:var(--text-3); text-decoration:none;">Engineering Documentation</a>
+                    <a href="#" style="color:var(--text-3); text-decoration:none;">SLA</a>
+                    <a href="#" style="color:var(--text-3); text-decoration:none;">Compliance</a>
+                    <span style="color:var(--accent-blue);">Domain Monitor Active</span>
+                </div>
+            </div>
         </footer>
     </div>
 

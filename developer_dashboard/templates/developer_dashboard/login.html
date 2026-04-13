@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Authentication — Nexus Global</title>
+    <title>Authentication — Logic Stream</title>
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <style>
         body {
@@ -27,7 +27,7 @@
 
 <body style="opacity:0; transition: opacity 0.5s;">
     <div class="auth-container anim-liquid-fade">
-        <a href="/" class="nx-logo" style="display:block;margin-bottom:48px;">Nexus<span class="nx-logo-dot">.</span>Global</a>
+        <a href="/" class="nx-logo" style="display:block;margin-bottom:48px;">Logic Stream<span class="nx-logo-dot">.</span>Global</a>
         
         <div style="margin-bottom:32px;">
             <h1 class="heading-md" style="font-size:1.5rem; margin-bottom:8px;">Operational Gateway</h1>
@@ -57,9 +57,14 @@
         </form>
 
         <div style="margin-top:40px; text-align:center; border-top: 1px solid var(--border-subtle); padding-top:24px;">
-            <p class="body-sm">Unsecured Access Prohibited<br>
-            <a href="{% url 'dev_signup' %}" style="color:var(--accent-blue); text-decoration:none; display:inline-block; margin-top:12px;">Create Credentials</a>
-            </p>
+            <p class="body-sm" style="margin-bottom:16px;">Unsecured Access Prohibited</p>
+            <div style="display:flex; justify-content:center; gap:16px; font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; opacity:0.6; margin-bottom:16px;">
+                <a href="#" style="color:var(--text-3); text-decoration:none;">Documentation</a>
+                <a href="#" style="color:var(--text-3); text-decoration:none;">SLA</a>
+                <a href="#" style="color:var(--text-3); text-decoration:none;">Compliance</a>
+            </div>
+            <a href="{% url 'dev_signup' %}" style="color:var(--accent-blue); text-decoration:none; display:inline-block; font-size:0.75rem; font-weight:700;">Create Operational Credentials</a>
+            <p style="font-size:0.6rem; color:var(--text-3); margin-top:24px; opacity:0.4;">© 2026 Logic Stream Operations</p>
         </div>
     </div>
 
