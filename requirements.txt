@@ -1,7 +1,13 @@
 Django>=4.2
+torch
+transformers
+sentence-transformers
+faiss-cpu
 google-generativeai
 requests
 numpy
+pandas
+scikit-learn
 djangorestframework
 django-htmx
 gunicorn

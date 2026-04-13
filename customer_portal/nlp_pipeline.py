@@ -1,9 +1,10 @@
+import os
 import re
 import string
-import os
+import torch
+import json
 from django.conf import settings
 from .apps import CustomerPortalConfig
-import json
 
 # Categories from the NLP Case Study
 CATEGORIES = {
@@ -52,7 +53,6 @@ class NLPClassifier:
         
         if tokenizer and model:
             try:
-                import torch
                 inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128)
                 with torch.no_grad():
                     outputs = model(**inputs)
@@ -61,16 +61,13 @@ class NLPClassifier:
                 prediction_id = torch.argmax(probabilities, dim=-1).item()
                 confidence = probabilities[0][prediction_id].item() * 100
 
-                # Map BERT indices to our labels
-                # Note: The BERT model might have different labels than SEED_DATA
-                # Based on views.py, it expects: {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
-                # But nlp_pipeline.py originally had financial categories.
-                # We will stick to the enterprise narrative:
+                # Enterprise labels
                 labels = {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
                 return labels.get(prediction_id, "Inquiry"), round(confidence, 2)
             except Exception as e:
-                print(f"[NLP Pipeline] BERT prediction error: {e}")
-
+                print(f"[NLP Pipeline] Local BERT Error: {e}")
+        
+        # Adaptive Triage Fallback
         if CustomerPortalConfig.remote_mode and self.model_gemini:
             try:
                 prompt = f"Categorize this support ticket text into one of these: [Technical Discrepancy, Account/Billing, Operational Feedback]. Text: '{text}'. Return only JSON: {{\"category\": \"CATEGORY_NAME\", \"confidence\": 95}}"
@@ -149,7 +146,6 @@ class NLPClassifier:
         Detects customer sentiment (Happy/Neutral vs Angry/Frustrated).
         """
         pipeline = CustomerPortalConfig.moderation_pipeline
-        # If moderation_pipeline is not loaded, we can use the intent_pipeline as a fallback for sentiment
         fallback_pipeline = CustomerPortalConfig.intent_pipeline
         
         sentiment = "Neutral"
@@ -161,14 +157,12 @@ class NLPClassifier:
                 label = result['label'].lower()
                 score = result['score']
                 
-                # Handling cardiffnlp labels: negative, neutral, positive
                 if label == 'negative':
                     sentiment = "Angry/Frustrated"
                 elif label == 'positive':
                     sentiment = "Happy/Satisfied"
                 elif label == 'neutral':
                     sentiment = "Professional"
-                # Fallback for toxic-comment-model if used instead
                 elif label == 'toxic':
                     sentiment = "Angry/Frustrated"
                 else:
@@ -201,4 +195,3 @@ class NLPClassifier:
 
 # Singleton instance
 classifier = NLPClassifier()
-
