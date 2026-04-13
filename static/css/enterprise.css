@@ -28,9 +28,9 @@
 
   /* Operational Accents */
   /* High-Contrast Professional Pastel Palette */
-  --accent-blue-soft:  #72A0C1;
-  --accent-peach-soft: #FFCCB3;
-  --accent-emerald:    #A2D1A9;
+  --accent-blue-soft:  #3b82f6;
+  --accent-peach-soft: #a855f7;
+  --accent-emerald:    #10b981;
   
   --accent-periwinkle: var(--accent-blue-soft);
   --accent-rose-dust:  var(--accent-peach-soft);
