@@ -8,9 +8,10 @@ class CustomerPortalConfig(AppConfig):
     model = None
     moderation_pipeline = None
     intent_pipeline = None
-    remote_mode = False 
+    remote_mode = False  # Track if we are in serverless/remote mode
 
-    # Semantic Squad Contexts
+    
+    # Semantic Squad Contexts (for intent-based routing)
     SQUAD_CONTEXTS = {
         'Systems Engine': 'Infrastructure, backend servers, database performance, APIs, and low-level system integrity.',
         'Creative Architecture': 'Visual design, user interface components, CSS animations, responsive layouts, and frontend aesthetics.',
@@ -18,6 +19,7 @@ class CustomerPortalConfig(AppConfig):
     }
     
     def ready(self):
+        # Prevent double-loading in Django's runserver reloading
         if os.environ.get('RUN_MAIN', None) != 'true':
             return
 
@@ -42,27 +44,37 @@ class CustomerPortalConfig(AppConfig):
                 CustomerPortalConfig.model.eval()
                 print("[Logic Stream] ✅ Intelligent Triage Engine Online!")
             else:
-                print("[Logic Stream] WARNING: Triage engine model not found.")
+                print("[Logic Stream] WARNING: Triage engine model not found. Using operational fallback.")
+        except ImportError:
+            print("[Logic Stream] WARNING: Essential processing libraries not installed. Triage engine unavailable.")
         except Exception as e:
-            print(f"[Logic Stream] ERROR: Failed to initialize triage engine: {e}")
+            print(f"[Logic Stream] WARNING: Error initializing triage engine: {e}")
 
-        # 2. Load Content Analytics (Sentiment)
+        # 2. Load Content Analytics (Sentiment/Tone Analysis)
         try:
             from transformers import pipeline
             CustomerPortalConfig.moderation_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
             print("[Logic Stream] ✅ Analytic Tone Analysis Online!")
         except Exception as e:
-            print(f"[Logic Stream] ERROR: Moderation model error: {e}")
+            print(f"[Logic Stream] WARNING: Moderation model error: {e}")
 
-        # 3. Load Intent Classification (Zero-Shot)
+        # 3. Load Intent Classification (Zero-Shot) — The Logic Fallback
         try:
             from transformers import pipeline
+            # Standard local zero-shot loading
             CustomerPortalConfig.intent_pipeline = pipeline(
                 "zero-shot-classification", 
                 model="facebook/bart-large-mnli"
             )
             print("[Logic Stream] ✅ Local Zero-Shot Triage Online!")
         except Exception as e:
-            print(f"[Logic Stream] ERROR: Intent pipeline failure: {e}")
+            # ACTIVATE ADAPTIVE REMOTE INTELLIGENCE
             CustomerPortalConfig.remote_mode = True
-            print("[Logic Stream] 🌐 Adaptive Fallback: Remote Intelligence Activated.")
+            print("[Logic Stream] 🌐 Activating Adaptive Remote Intelligence (Hugging Face Fallback)...")
+            
+            # Verify Hugging Face Token availability
+            if os.environ.get('HF_TOKEN'):
+                print("[Logic Stream] ✅ Remote Hugging Face Triage Ready.")
+            else:
+                print("[Logic Stream] ⚠️ HF_TOKEN missing in environment. Triage will use keyword fallback.")
+

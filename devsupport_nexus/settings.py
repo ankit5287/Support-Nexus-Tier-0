@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -80,12 +81,36 @@ WSGI_APPLICATION = 'devsupport_nexus.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if os.environ.get('VERCEL'):
+    # Vercel Deployment Optimization: Use cookie-based sessions to avoid DB write-locks
+    SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+    
+    # Enable WhiteNoise to serve from staticfiles_dirs without collectstatic run
+    WHITENOISE_USE_FINDERS = True
+    
+    # Optional: For ephemeral writes, you can copy db.sqlite3 to /tmp
+    # But for now, we'll keep it as is. If tickets fail to save, 
+    # we suggest moving to a real Postgres instance like Neon.
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': '/tmp/db.sqlite3' if not DEBUG else (BASE_DIR / 'db.sqlite3'),
+        }
     }
-}
+    
+    # On Vercel startup, if the DB doesn't exist in /tmp, copy the initial one
+    import shutil
+    db_source = BASE_DIR / "db.sqlite3"
+    db_dest = "/tmp/db.sqlite3"
+    if os.path.exists(db_source) and not os.path.exists(db_dest):
+        shutil.copy2(db_source, db_dest)
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation

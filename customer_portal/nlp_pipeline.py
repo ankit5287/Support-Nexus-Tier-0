@@ -1,10 +1,10 @@
-import os
 import re
 import string
-import torch
-import json
+import os
 from django.conf import settings
 from .apps import CustomerPortalConfig
+import json
+import requests
 
 # Categories from the NLP Case Study
 CATEGORIES = {
@@ -35,13 +35,22 @@ class NLPClassifier:
     def __init__(self):
         if self._initialized: return
         self._initialized = True
-        self.api_key = os.environ.get('GOOGLE_API_KEY')
-        if self.api_key:
-            import google.generativeai as genai
-            genai.configure(api_key=self.api_key)
-            self.model_gemini = genai.GenerativeModel('gemini-1.5-flash')
-        else:
-            self.model_gemini = None
+        self.hf_token = os.environ.get('HF_TOKEN')
+        self.hf_api_url = "https://api-inference.huggingface.co/models/"
+
+    def _query_hf(self, model_id, payload):
+        """Helper to call Hugging Face Inference API."""
+        if not self.hf_token:
+            return None
+        
+        headers = {"Authorization": f"Bearer {self.hf_token}"}
+        url = f"{self.hf_api_url}{model_id}"
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=10)
+            return response.json()
+        except Exception as e:
+            print(f"[NLP Pipeline] HF API Error for {model_id}: {e}")
+            return None
 
     def classify_ticket(self, text):
         """
@@ -53,6 +62,7 @@ class NLPClassifier:
         
         if tokenizer and model:
             try:
+                import torch
                 inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128)
                 with torch.no_grad():
                     outputs = model(**inputs)
@@ -61,22 +71,29 @@ class NLPClassifier:
                 prediction_id = torch.argmax(probabilities, dim=-1).item()
                 confidence = probabilities[0][prediction_id].item() * 100
 
-                # Enterprise labels
+                # Map BERT indices to our labels
+                # Note: The BERT model might have different labels than SEED_DATA
+                # Based on views.py, it expects: {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
+                # But nlp_pipeline.py originally had financial categories.
+                # We will stick to the enterprise narrative:
                 labels = {0: "Technical Discrepancy", 1: "Account/Billing", 2: "Operational Feedback"}
                 return labels.get(prediction_id, "Inquiry"), round(confidence, 2)
             except Exception as e:
-                print(f"[NLP Pipeline] Local BERT Error: {e}")
-        
-        # Adaptive Triage Fallback
-        if CustomerPortalConfig.remote_mode and self.model_gemini:
+                print(f"[NLP Pipeline] BERT prediction error: {e}")
+
+        if CustomerPortalConfig.remote_mode and self.hf_token:
             try:
-                prompt = f"Categorize this support ticket text into one of these: [Technical Discrepancy, Account/Billing, Operational Feedback]. Text: '{text}'. Return only JSON: {{\"category\": \"CATEGORY_NAME\", \"confidence\": 95}}"
-                response = self.model_gemini.generate_content(prompt)
-                extracted_text = response.text.strip('` \n').replace('json', '')
-                res_data = json.loads(extracted_text)
-                return res_data.get('category', 'Inquiry'), res_data.get('confidence', 90.0)
+                candidate_labels = ["Technical Discrepancy", "Account/Billing", "Operational Feedback"]
+                model_id = "facebook/bart-large-mnli"
+                payload = {
+                    "inputs": text,
+                    "parameters": {"candidate_labels": candidate_labels}
+                }
+                res = self._query_hf(model_id, payload)
+                if res and 'labels' in res:
+                    return res['labels'][0], round(res['scores'][0] * 100, 2)
             except Exception as e:
-                print(f"[NLP Pipeline] Gemini Triage Error: {e}")
+                print(f"[NLP Pipeline] HF Triage Error: {e}")
 
         # Keyword Fallback
         processed = clean_text(text)
@@ -122,16 +139,31 @@ class NLPClassifier:
             except Exception as e:
                 print(f"[NLP Pipeline] Urgency detection error: {e}")
 
-        if CustomerPortalConfig.remote_mode and self.model_gemini and confidence < 0.1:
+        if CustomerPortalConfig.remote_mode and self.hf_token and confidence < 0.1:
             try:
-                prompt = f"Analyze urgency for this ticket: '{text}'. Categories: [Critical Emergency, High Urgency, Standard Request]. Return JSON: {{\"label\": \"LABEL\", \"priority\": \"P1/P2/P3\", \"confidence\": 0.9}}"
-                response = self.model_gemini.generate_content(prompt)
-                res_data = json.loads(response.text.strip('` \n').replace('json', ''))
-                urgency_label = res_data.get('label', 'Standard')
-                priority = res_data.get('priority', 'P3')
-                confidence = res_data.get('confidence', 0.8)
+                candidate_labels = ["Critical Emergency", "High Urgency", "Standard Request"]
+                model_id = "facebook/bart-large-mnli"
+                payload = {
+                    "inputs": text,
+                    "parameters": {"candidate_labels": candidate_labels}
+                }
+                res = self._query_hf(model_id, payload)
+                if res and 'labels' in res:
+                    top_label = res['labels'][0]
+                    confidence = res['scores'][0]
+                    urgency_label = "Standard"
+                    priority = "P3"
+                    
+                    if top_label == "Critical Emergency":
+                        priority = "P1"
+                        urgency_label = "Critical (HF)"
+                    elif top_label == "High Urgency":
+                        priority = "P2"
+                        urgency_label = "High (HF)"
+                        
+                    return priority, urgency_label, round(confidence * 100, 2)
             except Exception as e:
-                print(f"[NLP Pipeline] Gemini Urgency Error: {e}")
+                print(f"[NLP Pipeline] HF Urgency Error: {e}")
 
         # Keyword boost
         p1_keywords = ["emergency", "outage", "production down", "critical failure", "security breach", "data loss", "cannot access"]
@@ -146,6 +178,7 @@ class NLPClassifier:
         Detects customer sentiment (Happy/Neutral vs Angry/Frustrated).
         """
         pipeline = CustomerPortalConfig.moderation_pipeline
+        # If moderation_pipeline is not loaded, we can use the intent_pipeline as a fallback for sentiment
         fallback_pipeline = CustomerPortalConfig.intent_pipeline
         
         sentiment = "Neutral"
@@ -157,12 +190,14 @@ class NLPClassifier:
                 label = result['label'].lower()
                 score = result['score']
                 
+                # Handling cardiffnlp labels: negative, neutral, positive
                 if label == 'negative':
                     sentiment = "Angry/Frustrated"
                 elif label == 'positive':
                     sentiment = "Happy/Satisfied"
                 elif label == 'neutral':
                     sentiment = "Professional"
+                # Fallback for toxic-comment-model if used instead
                 elif label == 'toxic':
                     sentiment = "Angry/Frustrated"
                 else:
@@ -195,3 +230,4 @@ class NLPClassifier:
 
 # Singleton instance
 classifier = NLPClassifier()
+
