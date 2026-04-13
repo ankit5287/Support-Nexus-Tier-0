@@ -9,110 +9,7 @@
     <link rel="stylesheet" href="{% static 'css/enterprise.css' %}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        .command-layout {
-            display: grid;
-            grid-template-columns: 1fr 340px;
-            gap: 1px;
-            background: var(--border-subtle);
-            border: 1px solid var(--border-subtle);
-            margin-top: 40px;
-        }
 
-        .command-main, .command-sidebar {
-            background: #000;
-            padding: 40px;
-        }
-
-        .nexus-monitor {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            background: var(--border-subtle);
-            border: 1px solid var(--border-subtle);
-            margin-bottom: 40px;
-        }
-
-        .monitor-cell {
-            background: #000;
-            padding: 24px;
-            height: 140px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
-        }
-        .monitor-cell:hover { background: rgba(255,255,255,0.02); }
-        .monitor-cell.active { background: rgba(59,130,246,0.05); border-bottom: 2px solid var(--accent-blue); }
-
-        .monitor-label { font-size: 0.7rem; font-weight: 800; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.1em; }
-        .monitor-val { font-size: 1.5rem; font-weight: 700; color: #fff; }
-        
-        .velocity-container {
-            border: 1px solid var(--border-subtle);
-            background: #000;
-            padding: 24px;
-            margin-bottom: 40px;
-        }
-
-        .ticket-strip {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border-subtle);
-            transition: all 0.3s;
-        }
-        .ticket-strip.focus-highlight {
-            background: rgba(182, 208, 226, 0.08);
-            border-left: 3px solid var(--accent-periwinkle);
-            padding-left: 17px;
-        }
-        .ticket-info { display: flex; flex-direction: column; gap: 4px; }
-        .ticket-id { font-size: 0.7rem; font-weight: 800; color: var(--text-3); }
-        .ticket-subject { font-size: 0.9rem; color: #fff; font-weight: 500; }
-        .ticket-team { font-size: 0.7rem; color: var(--accent-blue); font-weight: 700; text-transform: uppercase; }
-
-        /* Focal Search Fix */
-        .focal-search {
-            max-width: 800px;
-            margin: 0 auto 64px auto;
-            position: relative;
-        }
-
-        /* QAC Dropdown (Google Style) */
-        .qac-dropdown {
-            position: absolute;
-            top: 60px;
-            left: 0;
-            width: 100%;
-            background: rgba(0,0,0,0.8);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--r-sm);
-            z-index: 2000;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            display: none;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.8);
-        }
-        .qac-item {
-            padding: 12px 20px;
-            color: var(--text-2);
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .qac-item:hover, .qac-item.active {
-            background: rgba(182, 208, 226, 0.1);
-            color: var(--accent-periwinkle);
-        }
-        .qac-item-icon { color: var(--text-3); }
     </style>
 </head>
 
@@ -202,19 +99,19 @@
                         <div class="ticket-strip {% if t.is_focus %}focus-highlight{% endif %}">
                             <div class="ticket-info">
                                 <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
-                                    <span class="ticket-id">LOG-{{ t.id }}</span>
+                                    <span class="ticket-id mobile-hide">LOG-{{ t.id }}</span>
                                     <span class="ticket-team">/ {{ t.team }}</span>
                                 </div>
                                 <span class="ticket-subject">{{ t.title|safe }}</span>
                                 <div style="font-size:0.7rem; color:var(--text-3); margin-top:6px; display:flex; gap:12px; align-items:center;">
                                     <span>Specialist: {{ t.assigned }} · Origin: {{ t.user }}</span>
-                                    <span style="color: {% if t.sentiment_val > 70 %}var(--accent-rose){% else %}var(--accent-sage){% endif %}; font-weight:700; opacity:0.9;">
+                                    <span class="mobile-hide" style="color: {% if t.sentiment_val > 70 %}var(--accent-rose){% else %}var(--accent-sage){% endif %}; font-weight:700; opacity:0.9;">
                                         AI Sentiment: {{ t.sentiment }} ({{ t.sentiment_val|floatformat:1 }}%)
                                     </span>
-                                    <span style="opacity:0.6; font-style:italic;">Entropy Logic: {{ t.urgency_score|floatformat:0 }}% certainty</span>
+                                    <span class="mobile-hide" style="opacity:0.6; font-style:italic;">Entropy Logic: {{ t.urgency_score|floatformat:0 }}% certainty</span>
                                 </div>
                             </div>
-                            <div style="display:flex; gap:20px; align-items:center;">
+                            <div class="ticket-actions">
                                 <div id="status-badge-{{ t.id }}">
                                     <span class="badge status-{{ t.status|lower|cut:' ' }}" style="padding:6px 12px; font-weight:800;">{{ t.status|upper }}</span>
                                 </div>

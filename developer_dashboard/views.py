@@ -59,7 +59,7 @@ def highlight_matches(text, query):
 
 
 @login_required(login_url='/dev/login/')
-@user_passes_test(staff_required, login_url='/')
+@user_passes_test(staff_required, login_url='/dev/login/')
 def dashboard(request):
     from customer_portal.models import SupportCase
     from django.db.models import Count
@@ -314,7 +314,7 @@ def logout_view(request):
 
 
 @login_required(login_url='/dev/login/')
-@user_passes_test(staff_required, login_url='/')
+@user_passes_test(staff_required, login_url='/dev/login/')
 def team_view(request, team_name):
     """Domain-Specific Operational View."""
     from customer_portal.models import SupportCase
@@ -348,7 +348,7 @@ def team_view(request, team_name):
 
 
 @login_required(login_url='/dev/login/')
-@user_passes_test(staff_required, login_url='/')
+@user_passes_test(staff_required, login_url='/dev/login/')
 def transfer_ticket(request, ticket_id):
     """One-click routing between domains."""
     from customer_portal.models import SupportCase
@@ -365,7 +365,7 @@ def transfer_ticket(request, ticket_id):
 
 
 @login_required(login_url='/dev/login/')
-@user_passes_test(staff_required, login_url='/')
+@user_passes_test(staff_required, login_url='/dev/login/')
 def update_status_htmx(request, ticket_id):
     """HTMX endpoint for operational status changes."""
     from customer_portal.models import SupportCase
@@ -395,7 +395,7 @@ def update_status_htmx(request, ticket_id):
 
 
 @login_required(login_url='/dev/login/')
-@user_passes_test(staff_required, login_url='/')
+@user_passes_test(staff_required, login_url='/dev/login/')
 def kpi_update_htmx(request):
     """HTMX endpoint to refresh KPI values."""
     from customer_portal.models import SupportCase
@@ -421,6 +421,11 @@ def login_view(request):
             return redirect('dashboard') if user.is_staff else redirect('index')
         else:
             error = "Invalid credentials. Unauthorized access restricted."
+            
+    # Check if we were redirected here due to lack of staff permissions
+    if not error and request.user.is_authenticated and not request.user.is_staff:
+        error = "Staff administrative privileges required for Command Center access."
+        
     return render(request, 'developer_dashboard/login.html', {'error': error})
 
 

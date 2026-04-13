@@ -32,6 +32,14 @@ ALLOWED_HOSTS = ['*']
 X_FRAME_OPTIONS = 'ALLOWALL'
 CSRF_TRUSTED_ORIGINS = ['https://*.hf.space', 'https://huggingface.co']
 
+# Hugging Face Iframe Optimization: Allow cross-domain cookies
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_REFERRER_POLICY = 'no-referrer-when-downgrade'
+
 
 # Application definition
 
