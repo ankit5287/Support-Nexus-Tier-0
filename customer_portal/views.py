@@ -79,7 +79,7 @@ def index(request):
             )
             
             latest_case = SupportCase.objects.filter(user=request.user).latest('id')
-            context['success_msg'] = f"Operational Domain Analysis complete. Case #{latest_case.id} assigned to {squad}."
+            context['success_msg'] = f"Operational Domain Analysis complete. Case #{latest_case.id} assigned to {squad}. Please go to the Developer Dashboard to view your ticket."
             
         else:
             context['error'] = "Description required for processing."
