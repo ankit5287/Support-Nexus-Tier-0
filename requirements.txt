@@ -1,15 +1,7 @@
 Django>=4.2
-torch
-transformers>=4.39.3
-accelerate
-numpy
-datasets
-pandas
-sentence-transformers
-faiss-cpu
 google-generativeai
-spacy
-scikit-learn
+requests
+numpy
 djangorestframework
 django-htmx
 gunicorn

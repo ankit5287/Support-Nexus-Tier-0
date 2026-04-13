@@ -1,0 +1,11 @@
+my_fine_tuned_bert/
+my_fine_tuned_moderator/
+scratch/
+training_scripts/
+*.safetensors
+*.bin
+db.sqlite3
+staticfiles/
+venv/
+__pycache__/
+.DS_Store

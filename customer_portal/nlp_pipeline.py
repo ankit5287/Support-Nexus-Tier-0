@@ -4,6 +4,7 @@ import os
 import torch
 from django.conf import settings
 from .apps import CustomerPortalConfig
+import json
 
 # Categories from the NLP Case Study
 CATEGORIES = {
@@ -34,6 +35,13 @@ class NLPClassifier:
     def __init__(self):
         if self._initialized: return
         self._initialized = True
+        self.api_key = os.environ.get('GOOGLE_API_KEY')
+        if self.api_key:
+            import google.generativeai as genai
+            genai.configure(api_key=self.api_key)
+            self.model_gemini = genai.GenerativeModel('gemini-1.5-flash')
+        else:
+            self.model_gemini = None
 
     def classify_ticket(self, text):
         """
@@ -62,7 +70,17 @@ class NLPClassifier:
                 return labels.get(prediction_id, "Inquiry"), round(confidence, 2)
             except Exception as e:
                 print(f"[NLP Pipeline] BERT prediction error: {e}")
-        
+
+        if CustomerPortalConfig.remote_mode and self.model_gemini:
+            try:
+                prompt = f"Categorize this support ticket text into one of these: [Technical Discrepancy, Account/Billing, Operational Feedback]. Text: '{text}'. Return only JSON: {{\"category\": \"CATEGORY_NAME\", \"confidence\": 95}}"
+                response = self.model_gemini.generate_content(prompt)
+                extracted_text = response.text.strip('` \n').replace('json', '')
+                res_data = json.loads(extracted_text)
+                return res_data.get('category', 'Inquiry'), res_data.get('confidence', 90.0)
+            except Exception as e:
+                print(f"[NLP Pipeline] Gemini Triage Error: {e}")
+
         # Keyword Fallback
         processed = clean_text(text)
         mapping = [
@@ -106,6 +124,17 @@ class NLPClassifier:
                     urgency_label = "Standard"
             except Exception as e:
                 print(f"[NLP Pipeline] Urgency detection error: {e}")
+
+        if CustomerPortalConfig.remote_mode and self.model_gemini and confidence < 0.1:
+            try:
+                prompt = f"Analyze urgency for this ticket: '{text}'. Categories: [Critical Emergency, High Urgency, Standard Request]. Return JSON: {{\"label\": \"LABEL\", \"priority\": \"P1/P2/P3\", \"confidence\": 0.9}}"
+                response = self.model_gemini.generate_content(prompt)
+                res_data = json.loads(response.text.strip('` \n').replace('json', ''))
+                urgency_label = res_data.get('label', 'Standard')
+                priority = res_data.get('priority', 'P3')
+                confidence = res_data.get('confidence', 0.8)
+            except Exception as e:
+                print(f"[NLP Pipeline] Gemini Urgency Error: {e}")
 
         # Keyword boost
         p1_keywords = ["emergency", "outage", "production down", "critical failure", "security breach", "data loss", "cannot access"]

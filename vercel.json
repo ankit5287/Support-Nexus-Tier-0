@@ -4,7 +4,19 @@
     {
       "src": "devsupport_nexus/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
+      "config": { 
+        "maxLambdaSize": "15mb", 
+        "runtime": "python3.9",
+        "excludeFiles": [
+          "my_fine_tuned_bert/**",
+          "my_fine_tuned_moderator/**",
+          "scratch/**",
+          "training_scripts/**",
+          "*.safetensors",
+          "*.bin"
+        ]
+      }
+
     }
   ],
   "routes": [

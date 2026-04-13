@@ -8,6 +8,10 @@ class CustomerPortalConfig(AppConfig):
     model = None
     moderation_pipeline = None
     intent_pipeline = None
+    remote_mode = False  # Track if we are in serverless/remote mode
+
+    remote_mode = False  # Track if we are in serverless/remote mode
+
     
     # Semantic Squad Contexts (for intent-based routing)
     SQUAD_CONTEXTS = {
@@ -59,11 +63,25 @@ class CustomerPortalConfig(AppConfig):
         # 3. Load Intent Classification (Zero-Shot) — The Logic Fallback
         try:
             from transformers import pipeline
-            # Using a high-performance model with safetensors support
+            # Standard local zero-shot loading
             CustomerPortalConfig.intent_pipeline = pipeline(
                 "zero-shot-classification", 
                 model="facebook/bart-large-mnli"
             )
-            print("[Logic Stream] ✅ Zero-Shot Triage Online!")
+            print("[Logic Stream] ✅ Local Zero-Shot Triage Online!")
         except Exception as e:
-            print(f"[Logic Stream] WARNING: Zero-Shot initialization error: {e}")
+            # ACTIVATE ADAPTIVE REMOTE INTELLIGENCE
+            CustomerPortalConfig.remote_mode = True
+            print("[Logic Stream] 🌐 Activating Adaptive Remote Intelligence (Gemini Fallback)...")
+            
+            # Verify Gemini availability
+            try:
+                import google.generativeai as genai
+                if os.environ.get('GOOGLE_API_KEY'):
+                    genai.configure(api_key=os.environ.get('GOOGLE_API_KEY'))
+                    print("[Logic Stream] ✅ Remote Gemini Triage Ready.")
+                else:
+                    print("[Logic Stream] ⚠️ GOOGLE_API_KEY missing. Triage will use keyword fallback.")
+            except ImportError:
+                print("[Logic Stream] ⚠️ Gemini library unavailable. Using keyword fallback.")
+
