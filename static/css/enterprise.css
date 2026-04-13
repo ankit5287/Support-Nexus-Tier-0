@@ -91,13 +91,13 @@ body {
 /* ── DASHBOARD & TEAM LAYOUTS ── */
 .command-layout, .team-layout {
   display: grid;
-  grid-template-columns: 1fr 340px;
+  grid-template-columns: 340px 1fr;
   gap: 1px;
   background: var(--border-subtle);
   border: 1px solid var(--border-subtle);
   margin-top: 40px;
 }
-.team-layout { grid-template-columns: 1fr 360px; }
+.team-layout { grid-template-columns: 360px 1fr; }
 
 .command-main, .command-sidebar, .team-main, .team-sidebar {
   background: #000;
@@ -329,18 +329,30 @@ body {
 /* ── FORM ── */
 .nx-input, .nx-textarea {
   width: 100%;
-  background: transparent;
+  background: rgba(0,0,0,0.5);
   border: 1px solid var(--border-subtle);
   border-radius: var(--r-sm);
   color: #fff;
   font-family: var(--font-body);
-  font-size: 0.9rem;
-  padding: 14px;
+  font-size: 1rem;
+  padding: 20px;
   outline: none;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
 }
 .nx-input:focus, .nx-textarea:focus {
   border-color: var(--accent-blue);
-  box-shadow: 0 0 15px rgba(59,130,246,0.1);
+  background: rgba(59, 130, 246, 0.03);
+  box-shadow: 0 0 25px rgba(59,130,246,0.1), inset 0 2px 4px rgba(0,0,0,0.2);
+}
+.nx-label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-size: 0.7rem;
+  color: var(--text-2);
 }
 
 /* ── SEARCH BAR ── */

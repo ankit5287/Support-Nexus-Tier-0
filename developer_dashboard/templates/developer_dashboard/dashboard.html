@@ -78,6 +78,36 @@
             </div>
 
             <div class="command-layout">
+                <!-- SIDEBAR ANALYTICS: INTERACTIVE MONITOR -->
+                <div class="command-sidebar">
+                    <div style="margin-bottom:48px;">
+                        <h4 class="kpi-label">Distribution Circle</h4>
+                        <div style="padding:24px 0; position:relative;">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                        <p class="body-sm" style="font-size:0.6rem; opacity:0.5; text-align:center;">Interactive segments: Click to filter stream.</p>
+                    </div>
+
+                    <div class="velocity-container">
+                        <h4 class="kpi-label">System Velocity</h4>
+                        <div style="height:140px; margin-top:16px;">
+                            <canvas id="velocityChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="kpi-label">Performance Core</h4>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Transmission Volume</div>
+                            <div id="kpi-total" class="kpi-value">{{ total_tickets }}</div>
+                        </div>
+                        <div class="kpi-card">
+                            <div class="kpi-label">Validated Resolutions</div>
+                            <div id="kpi-verified" class="kpi-value">{{ verified_count }}</div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- MAIN COMMAND AREA: THE GLOBAL OPERATIONAL STREAM -->
                 <div class="command-main">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px;">
@@ -135,36 +165,6 @@
                             <p class="body-sm" style="opacity:0.4;">Operational stream synchronized. No anomalies detected.</p>
                         </div>
                         {% endif %}
-                    </div>
-                </div>
-
-                <!-- SIDEBAR ANALYTICS: INTERACTIVE MONITOR -->
-                <div class="command-sidebar">
-                    <div style="margin-bottom:48px;">
-                        <h4 class="kpi-label">Distribution Circle</h4>
-                        <div style="padding:24px 0; position:relative;">
-                            <canvas id="distributionChart"></canvas>
-                        </div>
-                        <p class="body-sm" style="font-size:0.6rem; opacity:0.5; text-align:center;">Interactive segments: Click to filter stream.</p>
-                    </div>
-
-                    <div class="velocity-container">
-                        <h4 class="kpi-label">System Velocity</h4>
-                        <div style="height:140px; margin-top:16px;">
-                            <canvas id="velocityChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="kpi-label">Performance Core</h4>
-                        <div class="kpi-card">
-                            <div class="kpi-label">Transmission Volume</div>
-                            <div id="kpi-total" class="kpi-value">{{ total_tickets }}</div>
-                        </div>
-                        <div class="kpi-card">
-                            <div class="kpi-label">Validated Resolutions</div>
-                            <div id="kpi-verified" class="kpi-value">{{ verified_count }}</div>
-                        </div>
                     </div>
                 </div>
             </div>
