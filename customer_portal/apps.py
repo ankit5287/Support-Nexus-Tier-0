@@ -10,8 +10,6 @@ class CustomerPortalConfig(AppConfig):
     intent_pipeline = None
     remote_mode = False  # Track if we are in serverless/remote mode
 
-    remote_mode = False  # Track if we are in serverless/remote mode
-
     
     # Semantic Squad Contexts (for intent-based routing)
     SQUAD_CONTEXTS = {

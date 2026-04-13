@@ -1,7 +1,5 @@
 import numpy as np
-import torch
-from sentence_transformers import SentenceTransformer
-import faiss
+# Heavy imports moved inside methods to avoid Vercel bootstrap crashes
 from customer_portal.models import SupportCase
 from django.utils import timezone
 import os
@@ -13,29 +11,42 @@ class SemanticSearchEngine:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(SemanticSearchEngine, cls).__new__(cls)
-            cls._instance.model = SentenceTransformer('all-MiniLM-L6-v2')
+            cls._instance.model = None
+            try:
+                from sentence_transformers import SentenceTransformer
+                cls._instance.model = SentenceTransformer('all-MiniLM-L6-v2')
+            except Exception as e:
+                print(f"[Semantic Engine] Warning: Model unavailable ({e})")
             cls._instance.index = None
             cls._instance.ticket_ids = []
         return cls._instance
 
     def rebuild_index(self):
         """Builds a FAISS IP index from all existing tickets with L2 normalization."""
-        tickets = SupportCase.objects.all()
-        if not tickets.exists():
+        if not self.model: 
+            print("[Semantic Engine] Indexing aborted: No model.")
             return
+
+        try:
+            import faiss
+            tickets = SupportCase.objects.all()
+            if not tickets.exists():
+                return
+                
+            texts = [t.ticket_text for t in tickets]
+            self.ticket_ids = [t.id for t in tickets]
             
-        texts = [t.ticket_text for t in tickets]
-        self.ticket_ids = [t.id for t in tickets]
-        
-        embeddings = self.model.encode(texts, convert_to_tensor=False)
-        embeddings = np.array(embeddings).astype('float32')
-        
-        # L2 Normalization for Cosine Similarity
-        faiss.normalize_L2(embeddings)
-        
-        # Using IndexFlatIP for Inner Product (Cosine Similarity if normalized)
-        self.index = faiss.IndexFlatIP(embeddings.shape[1])
-        self.index.add(embeddings)
+            embeddings = self.model.encode(texts, convert_to_tensor=False)
+            embeddings = np.array(embeddings).astype('float32')
+            
+            # L2 Normalization for Cosine Similarity
+            faiss.normalize_L2(embeddings)
+            
+            # Using IndexFlatIP for Inner Product (Cosine Similarity if normalized)
+            self.index = faiss.IndexFlatIP(embeddings.shape[1])
+            self.index.add(embeddings)
+        except Exception as e:
+            print(f"[Semantic Engine] Indexing error: {e}")
 
     def calculate_weighted_score(self, ticket, cosine_similarity):
         """
@@ -66,12 +77,19 @@ class SemanticSearchEngine:
         if not self.index:
             return []
             
-        query_embedding = self.model.encode([query], convert_to_tensor=False)
-        query_embedding = np.array(query_embedding).astype('float32')
-        faiss.normalize_L2(query_embedding)
-        
-        # Search returns similarities (Inner Product) since we normalized
-        similarities, indices = self.index.search(query_embedding, top_k * 2) # Get more to re-rank
+        if not self.model: return []
+
+        try:
+            import faiss
+            query_embedding = self.model.encode([query], convert_to_tensor=False)
+            query_embedding = np.array(query_embedding).astype('float32')
+            faiss.normalize_L2(query_embedding)
+            
+            # Search returns similarities (Inner Product) since we normalized
+            similarities, indices = self.index.search(query_embedding, top_k * 2) # Get more to re-rank
+        except Exception as e:
+            print(f"[Semantic Engine] Search error: {e}")
+            return []
         
         scored_results = []
         for i, idx in enumerate(indices[0]):

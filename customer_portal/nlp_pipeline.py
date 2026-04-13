@@ -1,7 +1,6 @@
 import re
 import string
 import os
-import torch
 from django.conf import settings
 from .apps import CustomerPortalConfig
 import json
@@ -53,6 +52,7 @@ class NLPClassifier:
         
         if tokenizer and model:
             try:
+                import torch
                 inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128)
                 with torch.no_grad():
                     outputs = model(**inputs)
