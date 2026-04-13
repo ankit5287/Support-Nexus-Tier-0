@@ -11,3 +11,5 @@ results_intent/
 results_continuous/
 *.safetensors
 *.bin
+staticfiles/
+scratch/
