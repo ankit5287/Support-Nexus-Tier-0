@@ -49,13 +49,19 @@ def search_suggest(request):
     return JsonResponse({'suggestions': suggestions})
 
 
-def highlight_matches(text, query):
-    """Wraps matches in Pastel Sage highlights."""
+def highlight_matches(text, query, team=None):
+    """Wraps matches in Neon High-Visibility bolding."""
     import re
     if not query: return text
     
+    accent_class = "sh-periwinkle"
+    if team:
+        t = team.lower()
+        if 'creative' in t: accent_class = "sh-lavender"
+        elif 'neural' in t: accent_class = "sh-mint"
+    
     pattern = re.compile(f'({re.escape(query)})', re.IGNORECASE)
-    return pattern.sub(r'<mark style="background:var(--accent-sage); color:#000; padding:0 2px; border-radius:2px;">\1</mark>', text)
+    return pattern.sub(rf'<strong class="search-highlight {accent_class}">\1</strong>', text)
 
 
 @login_required(login_url='/dev/login/')
@@ -92,7 +98,7 @@ def dashboard(request):
         for log in search_results:
             final_tickets.append({
                 "id": log.id,
-                "title": highlight_matches(log.ticket_text[:120], query),
+                "title": highlight_matches(log.ticket_text[:120], query, log.assigned_team),
                 "status": log.status,
                 "priority": log.priority,
                 "team": log.assigned_team,

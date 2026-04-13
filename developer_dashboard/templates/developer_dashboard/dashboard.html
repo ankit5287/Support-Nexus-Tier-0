@@ -271,12 +271,44 @@
             const searchForm = document.getElementById('search-form');
             let debounceTimer;
 
+            // --- REAL-TIME BOLDING ENGINE ---
+            const applyLocalBolding = (query) => {
+                const q = query.trim();
+                const strips = document.querySelectorAll('.ticket-strip');
+                
+                strips.forEach(strip => {
+                    const subject = strip.querySelector('.ticket-subject');
+                    const teamLabel = strip.querySelector('.ticket-team').textContent;
+                    
+                    if (!subject.dataset.original) {
+                        // Store clean original text without existing tags
+                        subject.dataset.original = subject.textContent.trim();
+                    }
+
+                    if (!q) {
+                        subject.textContent = subject.dataset.original;
+                        return;
+                    }
+
+                    let accentClass = 'sh-periwinkle';
+                    if (teamLabel.toLowerCase().includes('creative')) accentClass = 'sh-lavender';
+                    if (teamLabel.toLowerCase().includes('neural')) accentClass = 'sh-mint';
+
+                    const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    const highlighted = subject.dataset.original.replace(regex, `<strong class="search-highlight ${accentClass}">$1</strong>`);
+                    subject.innerHTML = highlighted;
+                });
+            };
+
             if (qacInput && qacDropdown) {
                 qacInput.addEventListener('input', () => {
-                    clearTimeout(debounceTimer);
-                    const query = qacInput.value.trim();
+                    const query = qacInput.value;
                     
-                    if (query.length < 2) {
+                    // Instant Local Bolding
+                    applyLocalBolding(query);
+
+                    clearTimeout(debounceTimer);
+                    if (query.trim().length < 2) {
                         qacDropdown.style.display = 'none';
                         return;
                     }
@@ -287,15 +319,30 @@
                             const data = await response.json();
                             
                             if (data.suggestions && data.suggestions.length > 0) {
-                                qacDropdown.innerHTML = data.suggestions.map(s => `
-                                    <div class="qac-item" data-val="${s.val}" data-id="${s.id || ''}">
-                                        <svg class="qac-item-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <circle cx="11" cy="11" r="8"></circle>
-                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                        </svg>
-                                        ${s.val}
-                                    </div>
-                                `).join('');
+                                qacDropdown.innerHTML = data.suggestions.map(s => {
+                                    const val = s.val;
+                                    const q = query.toLowerCase();
+                                    const index = val.toLowerCase().indexOf(q);
+                                    let displayVal = val;
+                                    
+                                    if (index !== -1) {
+                                        // Characters typed are BOLD, predicted part regular
+                                        displayVal = `<strong style="font-weight:800; color:var(--text-1);">${val.substring(index, index + q.length)}</strong>${val.substring(index + q.length)}`;
+                                        if (index > 0) {
+                                            displayVal = val.substring(0, index) + displayVal;
+                                        }
+                                    }
+
+                                    return `
+                                        <div class="qac-item" data-val="${val}" data-id="${s.id || ''}">
+                                            <svg class="qac-item-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <circle cx="11" cy="11" r="8"></circle>
+                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            </svg>
+                                            ${displayVal}
+                                        </div>
+                                    `;
+                                }).join('');
                                 qacDropdown.style.display = 'block';
                                 
                                 // Click events
