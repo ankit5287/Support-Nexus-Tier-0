@@ -85,6 +85,9 @@ if os.environ.get('VERCEL'):
     # Vercel Deployment Optimization: Use cookie-based sessions to avoid DB write-locks
     SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
     
+    # Enable WhiteNoise to serve from staticfiles_dirs without collectstatic run
+    WHITENOISE_USE_FINDERS = True
+    
     # Optional: For ephemeral writes, you can copy db.sqlite3 to /tmp
     # But for now, we'll keep it as is. If tickets fail to save, 
     # we suggest moving to a real Postgres instance like Neon.
